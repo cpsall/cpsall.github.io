@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Week 1 — The Unlinked | Graphiverse</title>
+  <meta name="description" content="Degree distributions, in- vs. out-degree, and the 17 Marvel characters with zero wiki links.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/css/style.css">
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="brand"><a href="../index.html" style="color:inherit">GRAPH<span>IVERSE</span></a></div>
+    <div class="links">
+      <a href="../index.html#case-files">Posts</a>
+      <a href="../index.html#about">About</a>
+      <a href="https://github.com/cpsall/cpsall.github.io" target="_blank" rel="noopener">Source</a>
+    </div>
+  </nav>
+
+  <header class="post-header">
+    <div class="kicker">Week 01</div>
+    <h1>The Unlinked</h1>
+    <p class="dek">
+      303 characters, one shared Wikipedia link graph. Most of them talk to each other.
+      Seventeen don't talk to anyone. Nine talk only among themselves — and their whole
+      premise is that they die alone.
+    </p>
+    <div class="byline">Dimitrios, Andrei &amp; Christos — 02805 Social Graphs &amp; Interactions</div>
+  </header>
+
+  <article class="post-body">
+
+    <div class="stat-row">
+      <div class="stat"><span class="n">303</span><span class="label">total characters</span></div>
+      <div class="stat"><span class="n">277</span><span class="label">giant component</span></div>
+      <div class="stat"><span class="n">9</span><span class="label">sealed-off island</span></div>
+      <div class="stat"><span class="n">17</span><span class="label">fully unlinked</span></div>
+    </div>
+
+    <h2><span class="idx">01</span>Degree distributions</h2>
+    <p class="lead">
+      In-degree and out-degree, plotted against <code>k + 1</code> so the unlinked
+      characters (degree 0) don't just vanish off a logarithmic axis.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/degree-distribution.png" alt="In-degree and out-degree distribution of the Marvel character network, shown on both linear and log-log axes." loading="lazy">
+      <figcaption>Same numbers, two axes. The linear panel crushes everything past k≈10; the log-log panel doesn't.</figcaption>
+    </figure>
+
+    <figure class="figure-block">
+      <img src="../assets/img/leaderboard.png" alt="Two horizontal bar charts: top 5 characters by in-degree (Spider-Man, Hulk, Wolverine, Doctor Strange, Deadpool) versus top 5 by out-degree (Betsy Braddock, Cloak and Dagger, Adam Warlock, Venom, She-Hulk). No name appears on both lists." loading="lazy">
+      <figcaption>Highest in-degree = most linked to. Highest out-degree = links out the most. Zero overlap between the two lists.</figcaption>
+    </figure>
+
+    <div class="island-card">
+      <p class="section-label">Strikeforce: Morituri — an island, in passing</p>
+      <p class="members">
+        Backhand · Blackthorn · Radian · Scaredycat · Scatterbrain · Shear · Snapdragon · Toxyn · Vyking
+      </p>
+      <p style="margin-top:14px; color: var(--text-muted); font-size:0.92rem;">
+        9 characters, 0 links to the other 294. Fitting, for a team whose entire premise
+        is dying within a year of getting their powers — cut off from the rest of the
+        universe in the data, too.
+      </p>
+    </div>
+
+    <h2><span class="idx">02</span>The alone</h2>
+    <p>
+      These 17 have no incoming links and no outgoing links at all. Three are flagged —
+      not obscure, just isolated for a reason the graph itself can't show.
+    </p>
+
+    <div class="alone-list">
+      <span class="alone-pill flagged">Baymax <span class="note">— Disney/Pixar film</span></span>
+      <span class="alone-pill flagged">Miracleman (character) <span class="note">— rights dispute</span></span>
+      <span class="alone-pill flagged">Yo-Yo Rodriguez <span class="note">— Agents of S.H.I.E.L.D.</span></span>
+      <span class="alone-pill">Bird-Brain (Marvel Comics)</span>
+      <span class="alone-pill">Black Fox (Robert Paine)</span>
+      <span class="alone-pill">Brain Drain (character)</span>
+      <span class="alone-pill">Breeze Barton</span>
+      <span class="alone-pill">Captain Midlands</span>
+      <span class="alone-pill">Charcoal (comics)</span>
+      <span class="alone-pill">Father Time (Marvel Comics)</span>
+      <span class="alone-pill">Happy Sam Sawyer</span>
+      <span class="alone-pill">Hellfire (J. T. Slade)</span>
+      <span class="alone-pill">Illuminator (Marvel Comics)</span>
+      <span class="alone-pill">Ogre (Marvel Comics)</span>
+      <span class="alone-pill">Sean and Chris</span>
+      <span class="alone-pill">Solarman</span>
+      <span class="alone-pill">Super Rabbit</span>
+    </div>
+
+  </article>
+
+  <footer class="post-footer">
+    <p class="section-label">// Next</p>
+    <p>Week 2 opens soon. Data: Wikipedia, <em>Category:Marvel Comics superheroes</em>,
+      frozen snapshot via the course data page.</p>
+    <p><a href="../index.html">&larr; Back to all posts</a></p>
+  </footer>
+
+  <script src="../assets/js/script.js"></script>
+</body>
+</html>

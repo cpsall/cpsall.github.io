@@ -1,23 +1,90 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>My NetworkX Project</title>
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Graphiverse</title>
+  <meta name="description" content="A network-science dig through the Marvel Wikipedia link graph, filed weekly by Dimitrios, Andrei &amp; Christos.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="assets/css/style.css">
 </head>
-
 <body>
 
-    <h1>Hello from GitHub Pages!</h1>
+  <nav class="site-nav">
+    <div class="brand">GRAPH<span>IVERSE</span></div>
+    <div class="links">
+      <a href="index.html#case-files">Posts</a>
+      <a href="index.html#about">About</a>
+      <a href="https://github.com/cpsall/cpsall.github.io" target="_blank" rel="noopener">Source</a>
+    </div>
+  </nav>
 
-    <p id="message">Waiting for JavaScript...</p>
+  <header class="hero">
+    <div class="kicker">Social Graphs &amp; Interactions — 02805</div>
+    <h1>GRAPH<span class="accent">IVERSE</span></h1>
+    <p class="lede">
+      Eight weeks. One shared Marvel dataset — 303 characters from Wikipedia's
+      <em>Category:Marvel Comics superheroes</em>, and every link between their pages.
+      Every week we dig into it: who it hides, who it inflates, and what falls outside
+      the frame entirely.
+    </p>
+    <div class="credit-line">
+      By <strong>Dimitrios</strong>, <strong>Andrei</strong> &amp; <strong>Christos</strong>
+    </div>
+  </header>
 
-    <button onclick="changeMessage()">Click me</button>
+  <div class="halftone"></div>
 
-    <script src="script.js"></script>
+  <section class="case-files" id="case-files">
+    <p class="section-label">// Posts</p>
 
+    <a class="case-card" href="posts/week1-the-unlinked.html">
+      <div class="num">01</div>
+      <div>
+        <h3>The Unlinked</h3>
+        <p>17 characters with zero links, in or out — and a 9-member team whose entire
+          premise is dying alone, isolated in the data too.</p>
+      </div>
+      <div class="go">READ →</div>
+    </a>
+
+    <div class="case-card locked">
+      <div class="num">02</div>
+      <div>
+        <h3>Coming week 2</h3>
+        <p>Sealed until next week's release.</p>
+      </div>
+      <div class="go">LOCKED</div>
+    </div>
+  </section>
+
+  <section class="about-strip" id="about">
+    <div>
+      <p class="section-label">// The Dataset</p>
+      <p>
+        The playground is the Marvel Comics superheroes category on Wikipedia — 303 character
+        pages, and a directed edge <code>A → B</code> wherever A's article links to B's. It's
+        dense, hub-riddled, and a little unfair (Spider-Man alone is linked to by a third of
+        the network). For the first half of the course we mine its structure; later, its text.
+      </p>
+    </div>
+    <div>
+      <p class="section-label">// The Unit</p>
+      <p>
+        Three people, one shared dataset, an LLM doing the typing. This site is our public
+        notebook for course <strong>02805 — Social Graphs and Interactions</strong>: what we
+        asked, what we tried, what we got wrong, one post a week.
+      </p>
+    </div>
+  </section>
+
+  <footer class="site-footer">
+    <span>GRAPHIVERSE — built on GitHub Pages</span>
+    <span>Data: Wikipedia, Category:Marvel Comics superheroes</span>
+  </footer>
+
+  <script src="assets/js/script.js"></script>
 </body>
 </html>

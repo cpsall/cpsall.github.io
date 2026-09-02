@@ -1,0 +1,361 @@
+/* THE UNDERGRAPH — dark, mature comic-noir theme */
+/* Fonts (Bebas Neue / Inter / JetBrains Mono) are loaded via <link> in the HTML head,
+   not @import here — @import is render-blocking and stalls the page if the font CDN
+   is ever slow or unreachable. Fallback stacks below keep the page usable either way. */
+
+:root {
+  --bg: #0b0b0d;
+  --bg-panel: #141417;
+  --bg-panel-raised: #1b1b1f;
+  --border: #2a2a30;
+  --border-strong: #3a3a42;
+  --red: #c81d25;
+  --red-dim: #7a1015;
+  --amber: #d9a441;
+  --text: #e9e6df;
+  --text-muted: #8b8f96;
+  --text-faint: #55575e;
+  --font-display: 'Bebas Neue', 'Arial Narrow', sans-serif;
+  --font-body: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Consolas', monospace;
+}
+
+* { box-sizing: border-box; }
+
+html { scroll-behavior: smooth; }
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-body);
+  line-height: 1.6;
+  background-image:
+    radial-gradient(circle at 15% 10%, rgba(200,29,37,0.05), transparent 35%),
+    radial-gradient(circle at 85% 0%, rgba(217,164,65,0.04), transparent 40%);
+  background-attachment: fixed;
+}
+
+a { color: var(--amber); text-decoration: none; }
+a:hover { color: var(--red); }
+
+/* halftone texture strip, used as a section divider */
+.halftone {
+  height: 14px;
+  background-image: radial-gradient(circle, var(--border-strong) 1.4px, transparent 1.6px);
+  background-size: 10px 10px;
+  opacity: 0.6;
+}
+
+/* ---------- nav ---------- */
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 22px 6vw;
+  border-bottom: 1px solid var(--border);
+  position: sticky;
+  top: 0;
+  background: rgba(11,11,13,0.92);
+  backdrop-filter: blur(6px);
+  z-index: 10;
+}
+
+.site-nav .brand {
+  font-family: var(--font-display);
+  font-size: 1.6rem;
+  letter-spacing: 0.08em;
+  color: var(--text);
+}
+.site-nav .brand span { color: var(--red); }
+
+.site-nav .links a {
+  margin-left: 28px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--text-muted);
+}
+.site-nav .links a:hover { color: var(--red); }
+
+/* ---------- hero ---------- */
+.hero {
+  padding: 9vh 6vw 7vh;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.hero .kicker {
+  font-family: var(--font-mono);
+  color: var(--red);
+  letter-spacing: 0.2em;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  margin-bottom: 14px;
+}
+
+.hero h1 {
+  font-family: var(--font-display);
+  font-size: clamp(3.2rem, 9vw, 7rem);
+  line-height: 0.92;
+  margin: 0 0 20px;
+  letter-spacing: 0.02em;
+}
+.hero h1 .accent { color: var(--red); }
+
+.hero p.lede {
+  max-width: 640px;
+  color: var(--text-muted);
+  font-size: 1.08rem;
+}
+
+.credit-line {
+  margin-top: 28px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+.credit-line strong { color: var(--text-muted); font-weight: 600; }
+
+/* ---------- section headings ---------- */
+.section-label {
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--amber);
+  margin: 0 0 10px;
+}
+
+/* ---------- case file list (index) ---------- */
+.case-files {
+  padding: 6vh 6vw 10vh;
+}
+
+.case-card {
+  display: grid;
+  grid-template-columns: 90px 1fr auto;
+  gap: 24px;
+  align-items: center;
+  padding: 26px 22px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  margin-bottom: 16px;
+  transition: border-color 0.15s ease, transform 0.15s ease;
+}
+.case-card:hover {
+  border-color: var(--red-dim);
+  transform: translateX(4px);
+}
+
+.case-card .num {
+  font-family: var(--font-display);
+  font-size: 2.6rem;
+  color: var(--border-strong);
+}
+.case-card:hover .num { color: var(--red); }
+
+.case-card h3 {
+  margin: 0 0 6px;
+  font-family: var(--font-display);
+  font-size: 1.7rem;
+  letter-spacing: 0.01em;
+}
+.case-card p {
+  margin: 0;
+  color: var(--text-muted);
+  font-size: 0.95rem;
+}
+.case-card .go {
+  font-family: var(--font-mono);
+  color: var(--text-faint);
+  font-size: 0.8rem;
+}
+.case-card:hover .go { color: var(--amber); }
+
+.case-card.locked {
+  opacity: 0.45;
+}
+.case-card.locked:hover { transform: none; border-color: var(--border); }
+
+/* ---------- about strip ---------- */
+.about-strip {
+  padding: 6vh 6vw;
+  border-top: 1px solid var(--border);
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+}
+@media (max-width: 760px) {
+  .about-strip { grid-template-columns: 1fr; }
+  .case-card { grid-template-columns: 50px 1fr; }
+  .case-card .go { display: none; }
+}
+
+.about-strip p { color: var(--text-muted); }
+
+/* ---------- footer ---------- */
+.site-footer {
+  padding: 28px 6vw 40px;
+  border-top: 1px solid var(--border);
+  font-family: var(--font-mono);
+  font-size: 0.78rem;
+  color: var(--text-faint);
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+/* ---------- post layout ---------- */
+.post-header {
+  padding: 8vh 6vw 5vh;
+  border-bottom: 1px solid var(--border);
+  max-width: 900px;
+}
+.post-header .kicker {
+  font-family: var(--font-mono);
+  color: var(--red);
+  letter-spacing: 0.2em;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  margin-bottom: 16px;
+}
+.post-header h1 {
+  font-family: var(--font-display);
+  font-size: clamp(2.6rem, 6vw, 4.4rem);
+  line-height: 1.0;
+  margin: 0 0 18px;
+}
+.post-header .dek {
+  color: var(--text-muted);
+  font-size: 1.1rem;
+  max-width: 700px;
+}
+.post-header .byline {
+  margin-top: 24px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  color: var(--text-faint);
+}
+
+.post-body {
+  padding: 6vh 6vw 4vh;
+  max-width: 780px;
+}
+.post-body h2 {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: 0.02em;
+  margin-top: 3em;
+  color: var(--text);
+}
+.post-body h2 .idx { color: var(--red); margin-right: 10px; }
+.post-body p { color: #cfccc4; font-size: 1.02rem; }
+.post-body p.lead { font-size: 1.15rem; color: var(--text); }
+.post-body strong { color: var(--text); }
+.post-body blockquote {
+  border-left: 3px solid var(--red);
+  margin: 2em 0;
+  padding: 0.4em 0 0.4em 1.4em;
+  color: var(--amber);
+  font-family: var(--font-mono);
+  font-size: 0.95rem;
+}
+
+.figure-block {
+  margin: 2.5em -6vw;
+  padding: 0 6vw;
+}
+.figure-block img {
+  width: 100%;
+  max-width: 1400px;
+  display: block;
+  margin: 0 auto;
+  border: 1px solid var(--border);
+}
+.figure-block figcaption {
+  text-align: center;
+  color: var(--text-faint);
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  margin-top: 12px;
+  max-width: 780px;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.stat-row {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+  margin: 1.6em 0;
+}
+.stat {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 14px 20px;
+  min-width: 140px;
+}
+.stat .n {
+  font-family: var(--font-display);
+  font-size: 2.1rem;
+  color: var(--red);
+  display: block;
+}
+.stat .label {
+  font-family: var(--font-mono);
+  font-size: 0.72rem;
+  color: var(--text-faint);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+
+/* bare name list for the alone section -- no per-character bios, just names,
+   with the "famous despite isolation" few flagged with a short tag inline */
+.alone-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 1.6em 0;
+}
+.alone-pill {
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+.alone-pill.flagged {
+  border-color: var(--red-dim);
+  color: var(--red);
+  font-weight: 600;
+}
+.alone-pill .note {
+  color: var(--text-faint);
+  font-weight: 400;
+  font-size: 0.78rem;
+}
+
+.island-card {
+  border: 1px solid var(--border-strong);
+  background: var(--bg-panel-raised);
+  padding: 22px 26px;
+  margin: 2em 0;
+}
+.island-card .section-label { color: var(--amber); }
+.island-card .members {
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  color: var(--text-muted);
+  line-height: 1.9;
+}
+
+.post-footer {
+  padding: 5vh 6vw 10vh;
+  max-width: 780px;
+  border-top: 1px solid var(--border);
+  margin-top: 4em;
+}
