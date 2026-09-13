@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Week 2 — The Alibi | Graphiverse</title>
+  <meta name="description" content="Is Marvel's structure explained by density alone? Degree distribution fit, the giant-component phase transition, the friendship paradox, a proper shuffle test of clustering, and what it takes to spring last week's isolated island loose.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    /* ---- scoped styles for the "character lab" explorable ---- */
+    .lab {
+      border: 1px solid var(--border-strong);
+      background: var(--bg-panel-raised);
+      padding: 26px 28px 30px;
+      margin: 2.2em 0;
+    }
+    .lab-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+    .lab-group { display: flex; flex-direction: column; gap: 8px; }
+    .lab-groups { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 22px; }
+    .lab-group-label {
+      font-family: var(--font-mono); font-size: 0.7rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--text-faint);
+    }
+    .lab-pill {
+      font-family: var(--font-mono); font-size: 0.82rem; padding: 8px 14px;
+      border: 1px solid var(--border); background: var(--bg-panel); color: var(--text-muted);
+      cursor: pointer; transition: border-color .15s ease, color .15s ease;
+    }
+    .lab-pill:hover { color: var(--text); border-color: var(--border-strong); }
+    .lab-pill.active.popular { border-color: var(--red-dim); color: var(--red); }
+    .lab-pill.active.isolated { border-color: var(--amber); color: var(--amber); }
+    .lab-main { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: center; }
+    @media (max-width: 760px) { .lab-main { grid-template-columns: 1fr; } }
+    .lab-viz { background: var(--bg); border: 1px solid var(--border); }
+    .lab-viz svg { width: 100%; height: auto; display: block; }
+    .lab-info h3 { font-family: var(--font-display); font-size: 1.9rem; margin: 0 0 4px; letter-spacing: 0.01em; }
+    .lab-info .lab-degree { font-family: var(--font-mono); font-size: 0.85rem; color: var(--text-faint); margin-bottom: 12px; }
+    .lab-info .lab-degree strong { color: var(--amber); }
+    .lab-info p { font-size: 0.95rem; color: var(--text-muted); margin: 0 0 18px; }
+    .lab-bars { display: flex; flex-direction: column; gap: 10px; }
+    .lab-bar-row { display: grid; grid-template-columns: 130px 1fr 56px; align-items: center; gap: 10px; }
+    .lab-bar-label { font-family: var(--font-mono); font-size: 0.72rem; color: var(--text-faint); text-transform: uppercase; letter-spacing: 0.04em; }
+    .lab-bar-track { height: 8px; background: var(--bg-panel); border: 1px solid var(--border); position: relative; }
+    .lab-bar-fill { height: 100%; background: var(--red); transition: width .25s ease; }
+    .lab-bar-fill.friend { background: var(--amber); }
+    .lab-bar-fill.char { background: #5b6b7a; }
+    .lab-bar-value { font-family: var(--font-mono); font-size: 0.78rem; color: var(--text); text-align: right; }
+    .lab-caption { margin-top: 14px; font-family: var(--font-mono); font-size: 0.78rem; color: var(--text-faint); }
+
+    /* -- animated character silhouette: generic hero-shaped figure, not a
+       depiction of any specific character's costume or likeness. Popular
+       characters glow and breathe; isolated ones flicker and desaturate. -- */
+    .hero-figure { transform-box: fill-box; transform-origin: 50% 100%; }
+    .hero-figure.popular { animation: hero-bob 2.6s ease-in-out infinite; }
+    .hero-figure.isolated { animation: hero-flicker 3.6s steps(1,end) infinite; filter: grayscale(1); }
+    .hero-aura { transform-box: fill-box; transform-origin: 50% 50%; }
+    .hero-aura.popular { animation: aura-pulse 2.6s ease-in-out infinite; }
+    .hero-aura.isolated { animation: aura-faint 3.6s ease-in-out infinite; }
+    .lab-edge { animation: edge-shimmer 3.4s ease-in-out infinite; }
+    .lab-isolation-ring { animation: ring-breathe 3.6s ease-in-out infinite; }
+    @keyframes hero-bob {
+      0%, 100% { transform: translateY(0); }
+      50%      { transform: translateY(-5px); }
+    }
+    @keyframes hero-flicker {
+      0%, 100% { opacity: 0.85; }
+      42%      { opacity: 0.85; }
+      46%      { opacity: 0.25; }
+      50%      { opacity: 0.7; }
+      74%      { opacity: 0.3; }
+      78%      { opacity: 0.8; }
+    }
+    @keyframes aura-pulse {
+      0%, 100% { opacity: 0.35; transform: scale(1); }
+      50%      { opacity: 0.7;  transform: scale(1.14); }
+    }
+    @keyframes aura-faint {
+      0%, 100% { opacity: 0.12; }
+      50%      { opacity: 0.03; }
+    }
+    @keyframes edge-shimmer {
+      0%, 100% { opacity: 0.3; }
+      50%      { opacity: 0.75; }
+    }
+    @keyframes ring-breathe {
+      0%, 100% { opacity: 0.7; r: 68; }
+      50%      { opacity: 0.3; r: 76; }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .hero-figure, .hero-aura, .lab-edge, .lab-isolation-ring { animation: none !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="brand"><a href="../index.html" style="color:inherit">GRAPH<span>IVERSE</span></a></div>
+    <div class="links">
+      <a href="../index.html#case-files">Posts</a>
+      <a href="../index.html#about">About</a>
+      <a href="https://github.com/cpsall/cpsall.github.io" target="_blank" rel="noopener">Source</a>
+    </div>
+  </nav>
+
+  <header class="post-header">
+    <div class="kicker">Week 02 — Null Models &amp; Shuffle Tests</div>
+    <h1>The Alibi</h1>
+    <p class="dek">
+      Marvel's network looks structured — hubs, clusters, a tight giant component, and a
+      seventeen-strong crowd of nobodies from week 1. A random graph the same size would
+      look structured too, if you squint. So we check every alibi: build the null models,
+      and see what actually survives.
+    </p>
+    <div class="byline">Dimitrios, Andrei &amp; Christos — 02805 Social Graphs &amp; Interactions</div>
+  </header>
+
+  <article class="post-body">
+
+    <div class="stat-row">
+      <div class="stat"><span class="n">303</span><span class="label">characters</span></div>
+      <div class="stat"><span class="n">1,434</span><span class="label">undirected links</span></div>
+      <div class="stat"><span class="n">9.5</span><span class="label">mean degree ⟨k⟩</span></div>
+      <div class="stat"><span class="n">277</span><span class="label">giant component</span></div>
+    </div>
+
+    <p class="lead">
+      Last week we found the shape of the network: a 277-character giant component, a
+      9-member island, 17 characters alone. This week's models ask the harder question —
+      how much of that shape is just what happens when you scatter ~1,400 links across
+      303 nodes, and how much actually needs a story?
+    </p>
+
+    <h2><span class="idx">01</span>Degree distribution: closer to which model?</h2>
+    <p>
+      We built two matched comparison networks — an Erdős–Rényi random graph and a
+      Barabási–Albert preferential-attachment network, both grown to Marvel's exact node
+      and edge count — and plotted all three degree distributions as CCDFs,
+      <code>P(K ≥ k)</code>, the version that survives all the way into the sparse tail
+      instead of dissolving into binning noise.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/degree-fit.png" alt="Log-log CCDF plot comparing Marvel's real degree distribution against a matched Erdős–Rényi random graph and a matched Barabási–Albert network. Marvel tracks the Barabási–Albert curve closely and pulls away from the Erdős–Rényi curve past degree 10." loading="lazy">
+      <figcaption>Marvel's tail (red dots) rides the Barabási–Albert curve (gold) almost the whole way; the Erdős–Rényi curve (grey) collapses by degree ≈15 — the Poisson tail just can't reach Spider-Man.</figcaption>
+    </figure>
+
+    <p>
+      A quick read of that plot would call it case closed: Marvel is heavy-tailed, the
+      random graph isn't. But a log-log curve can make plenty of distributions look
+      power-law-ish to the eye, even when they aren't one. We ran the
+      Clauset–Shalizi–Newman maximum-likelihood fit on Marvel's real in-degree sequence:
+    </p>
+
+    <div class="island-card">
+      <p class="section-label">CSN power-law fit — Marvel in-degree</p>
+      <p class="members">
+        α&nbsp;=&nbsp;2.22&nbsp;±&nbsp;0.12 &nbsp;·&nbsp; k<sub>min</sub>&nbsp;=&nbsp;5
+        &nbsp;·&nbsp; R vs. log-normal&nbsp;=&nbsp;−3.6 (p&nbsp;=&nbsp;0.12)
+        &nbsp;·&nbsp; R vs. exponential&nbsp;=&nbsp;+4.9 (p&nbsp;=&nbsp;0.53)
+      </p>
+      <p style="margin-top:14px; color: var(--text-muted); font-size:0.92rem;">
+        Both comparisons land above the conventional p&nbsp;&lt;&nbsp;0.05 bar. Neither
+        log-normal nor exponential is ruled out. At 303 nodes there just aren't enough
+        characters past k<sub>min</sub>=5 for the test to have real teeth.
+      </p>
+    </div>
+
+    <p>
+      So the honest claim is narrower than the plot suggests: Marvel's degree distribution
+      is <strong>heavy-tailed</strong> and shaped far more like a growth-with-preference
+      process than a homogeneous random one — but we can't statistically certify it as
+      <em>specifically</em> a power law.
+    </p>
+
+    <p>
+      That Barabási–Albert curve above isn't just a backdrop — it's grown to Marvel's
+      exact size (n=303, matched edge count) rather than left at the textbook 5,000 nodes.
+      Its biggest hub tops out at degree
+      <strong>77</strong> in this run. Spider-Man sits at <strong>106</strong>. Even a
+      model built specifically to produce runaway hubs, run at Marvel's actual size,
+      undershoots the real thing — a reminder that "matching n and m" still leaves room
+      for one run's luck, and that Wikipedia's editors funnel attention even harder than a
+      generic preferential-attachment rule does.
+    </p>
+
+    <h2><span class="idx">02</span>The giant component isn't the surprise</h2>
+    <p>
+      Erdős–Rényi theory predicts a sharp phase transition at ⟨k⟩&nbsp;=&nbsp;1: below it,
+      every component is small; above it, one giant component swallows an
+      <code>O(n)</code> share of the network. We swept ⟨k⟩ from 0.2 to 12 on 303-node
+      random graphs and marked where Marvel's real mean degree falls.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/phase-transition.png" alt="Phase transition curve of giant component fraction versus average degree for a 303-node Erdős–Rényi random graph, with a vertical line at the critical point k=1 and another at Marvel's real average degree of about 9.5, deep in the saturated regime." loading="lazy">
+      <figcaption>Marvel's ⟨k⟩ ≈ 9.5 sits far past the critical point ⟨k⟩ = 1 — at this density, a random graph would connect virtually everything.</figcaption>
+    </figure>
+
+    <p>
+      This is the trap that sits right at Marvel's density: a
+      <em>random</em> graph would be almost entirely one component, with isolated nodes
+      appearing only by chance. So the giant component swallowing 277/303 characters isn't
+      evidence of anything special — density alone predicts that. What density alone
+      does <em>not</em> predict is 17 characters at exactly zero links and a clean 9-member
+      island cut off from everyone else, while sitting at a mean degree nine and a half
+      times past the connectivity threshold. Section 05 comes back to exactly that gap.
+    </p>
+
+    <h2><span class="idx">03</span>Shuffle-testing clustering</h2>
+    <p>
+      Pick a computed property, and shuffle-test it properly —
+      not against a plain random graph (which changes everything at once) but against a
+      <strong>degree-preserving configuration model</strong>, which keeps every character's
+      exact number of links and only rewires who they connect to.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/clustering-shuffle.png" alt="Histogram comparing Marvel's real clustering coefficient of 0.320 against 300 resampled Erdős–Rényi networks (mean about 0.037) and 300 degree-preserving configuration-model networks (mean about 0.110). Marvel's real value sits far to the right of both null distributions." loading="lazy">
+      <figcaption>300 resamples per null. Marvel's clustering clears the plain-random null by ~95σ and the degree-preserving null by ~25σ.</figcaption>
+    </figure>
+
+    <div class="stat-row">
+      <div class="stat"><span class="n">0.320</span><span class="label">Marvel's real C</span></div>
+      <div class="stat"><span class="n">0.037</span><span class="label">ER(n,m) null mean</span></div>
+      <div class="stat"><span class="n">0.110</span><span class="label">config-model null mean</span></div>
+      <div class="stat"><span class="n">25σ</span><span class="label">gap after controlling for degree</span></div>
+    </div>
+
+    <p>
+      Reading the gap between the two nulls is the whole point of doing this properly.
+      Going from the plain-random null (0.037) up to the degree-preserving null (0.110)
+      is entirely explained by Marvel's hubs — high-degree characters mechanically buy some
+      clustering for free, just by having more neighbors who might know each other. But
+      Marvel's real clustering (0.320) still clears <em>that</em> null by roughly 25
+      standard deviations. Hub structure explains part of the story. Something else —
+      shared team-ups, story arcs, whatever actually produces a Wikipedia link between two
+      characters — is doing the rest, and a degree-only null can't see it.
+    </p>
+
+    <blockquote>
+      Marvel's giant component has a clustering coefficient of 0.32, against 0.11 ± 0.01
+      for 300 configuration-model networks sharing its exact degree sequence — a gap too
+      large to be explained by hub structure alone.
+    </blockquote>
+
+    <h2><span class="idx">04</span>Popular friends and the friendship paradox</h2>
+    <p>
+      The one we owed this post: the friendship paradox —
+      "your friends have more friends than you, on average." It's not folklore, it's
+      arithmetic. Averaged over every character's actual connections, a random
+      <em>friend</em> has a mean degree of <strong>22.1</strong>, against a network-wide
+      average degree of just <strong>9.5</strong> — a friend is, on average,
+      <strong>2.3×</strong> more connected than you are. Check it node by node:
+      <strong>87.4%</strong> of the 286 connected characters have fewer links than the
+      average of their own connections. The paradox isn't a quirk of a few extreme hubs
+      skewing an average — it holds for the overwhelming majority of the cast individually.
+    </p>
+    <p>
+      The mechanism is exactly the hub structure section 01 found: a handful of
+      wildly-popular characters occupy a hugely disproportionate share of everyone else's
+      neighbor lists, dragging up the average neighbor you'd sample. Meet the three doing
+      the most dragging, and the three characters for whom "friends" isn't even a defined
+      concept in this dataset — pick a character below.
+    </p>
+
+    <div class="lab">
+      <div class="lab-groups">
+        <div class="lab-group">
+          <span class="lab-group-label">Most connected</span>
+          <div class="lab-tabs" id="lab-tabs-popular"></div>
+        </div>
+        <div class="lab-group">
+          <span class="lab-group-label">Completely isolated</span>
+          <div class="lab-tabs" id="lab-tabs-isolated"></div>
+        </div>
+      </div>
+
+      <div class="lab-main">
+        <div class="lab-viz">
+          <svg id="lab-svg" viewBox="0 0 560 400" preserveAspectRatio="xMidYMid meet"></svg>
+        </div>
+        <div class="lab-info">
+          <h3 id="lab-name">—</h3>
+          <p class="lab-degree" id="lab-degree-line">—</p>
+          <p id="lab-desc">—</p>
+          <div class="lab-bars">
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">this character</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill char" id="lab-bar-char" style="width:0%"></div></div>
+              <span class="lab-bar-value" id="lab-bar-char-val">0</span>
+            </div>
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">network average</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill" id="lab-bar-avg" style="width:0%"></div></div>
+              <span class="lab-bar-value">9.5</span>
+            </div>
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">avg. friend's degree</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill friend" id="lab-bar-friend" style="width:0%"></div></div>
+              <span class="lab-bar-value">22.1</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <p class="lab-caption" id="lab-caption">Hover any dot for the connection's name.</p>
+    </div>
+
+    <p>
+      Spider-Man alone sits in 106 of the other 302 characters' link neighborhoods — a
+      little over a third of the entire cast is one hop from him. Hulk and Wolverine each
+      clear 60. On the other side, Baymax, Miracleman, and Yo-Yo Rodriguez have no recorded
+      co-appearance with anyone in this snapshot at all, despite each having a real,
+      well-known publication history — their "friend's average degree" is undefined for
+      the same reason a room with no one in it has no average height. That's not a
+      contradiction in the data; it's the friendship paradox's silent partner: the
+      characters doing the most to drag the average up, and the characters who don't
+      participate in the average at all, are opposite ends of the same distribution.
+    </p>
+
+    <h2><span class="idx">05</span>The 17 were never really a finding</h2>
+    <p>
+      Take Marvel's degree sequence — the number of links every one of the 303 characters
+      has — and rewire the network 300 times, keeping every degree fixed but randomizing
+      who connects to whom. Zero-degree stays zero-degree by construction: a node with no
+      stubs to rewire cannot end up with an edge, no matter how the rest of the network
+      gets shuffled.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="n">17</span><span class="label">real isolate count</span></div>
+      <div class="stat"><span class="n">17.01 ± 0.10</span><span class="label">config-model null (300 runs)</span></div>
+      <div class="stat"><span class="n">0.02 ± 0.14</span><span class="label">plain ER(n,m) null</span></div>
+    </div>
+
+    <p>
+      The contrast is the whole point. Under a plain random graph with Marvel's density,
+      isolated characters should be essentially extinct — 0.02 of them, on average, out of
+      303. Seventeen actual isolates against that baseline looks like a screaming anomaly.
+      But condition on the real degree sequence instead of discarding it, and the anomaly
+      evaporates completely: the configuration model reproduces exactly 17 isolates, every
+      single run, with standard deviation ≈0.1. There's no other possible outcome — those
+      17 characters have no recorded Wikipedia co-appearance with anyone else in the
+      category, full stop. That's not a structural property of the Marvel universe. It's a
+      property of what the snapshot happened to capture. The right way to have written last
+      week's finding: <em>17 characters have no recorded links in this dataset</em> — not
+      <em>the network isolates 17 characters</em>.
+    </p>
+
+    <h2><span class="idx">06</span>The island is a different story</h2>
+    <p>
+      Strikeforce: Morituri — the 9 characters whose whole premise is dying within a year
+      of getting powers — isn't degree-zero. They have 13 links, all pointed at each other,
+      forming one tightly connected internal component (density 0.36, degrees running from
+      2 up to Radian's internal hub-of-six). Their isolation is a different, weaker kind: no
+      edge happens to leave the group, not no edges at all.
+    </p>
+    <p>
+      Run the same shuffle: take the <em>full</em> 303-node degree sequence — Radian keeps
+      degree 6, every teammate keeps their real degree — and rewire. Unlike the 17, the
+      island's separateness is <strong>not</strong> baked into the degree sequence:
+    </p>
+
+    <div class="island-card">
+      <p class="section-label">Strikeforce: Morituri, reshuffled 300 times</p>
+      <p class="members">
+        Stays a clean, separate 9-node group: <strong>0 / 300</strong> times.
+        At least one member picks up an outside edge: <strong>300 / 300</strong> times.
+      </p>
+    </div>
+
+    <p>
+      So the island staying sealed off is a real, contingent fact about how those 13 edges
+      happen to be wired — not a guarantee like the isolates' zero-degree status. Which
+      raises the natural question: how little would it actually take to spring them?
+    </p>
+
+    <h2><span class="idx">07</span>The answer: exactly one link</h2>
+    <p>
+      Because the island is already one connected clump internally, adding a single edge
+      from <em>any</em> one of the nine to <em>any</em> member of the 277-strong giant
+      component merges the whole team into it at once — no partial credit needed, the
+      island's own internal edges do the rest of the work for free.
+    </p>
+    <div class="stat-row">
+      <div class="stat"><span class="n">100%</span><span class="label">merge rate, 500 trials, 1 added edge</span></div>
+    </div>
+    <p>
+      One misplaced citation, one crossover issue, one Wikipedia editor linking Radian's
+      page to Spider-Man's, and Strikeforce: Morituri stops being an island at all.
+    </p>
+
+    <h2><span class="idx">08</span>But redirecting isn't the same as adding</h2>
+    <p>
+      There's a second way to "rewire" the island that looks similar but isn't: instead of
+      adding a new outward link, take one of the team's own 13 internal edges and redirect
+      it outward — the Watts–Strogatz move, keeping one endpoint fixed and reassigning the
+      other. We swept this from 0 redirected edges up to all 13.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/island-rewire.png" alt="Line chart with two y-axes. The green line shows the percentage of trials where the island fully merges into the giant component, peaking near 96% at 1-2 redirected edges then declining to 0% by 13. The red dashed line shows the average number of island members stranded at degree 0, rising from 0 to 3 as more edges are redirected." loading="lazy">
+      <figcaption>Redirecting 1–2 of the island's own edges outward merges the team almost every time. Redirecting all 13 leaves members stranded instead — 0% merged, up to 3 of 9 at degree zero.</figcaption>
+    </figure>
+
+    <p>
+      Redirecting a handful of edges works about as well as adding one from scratch — 95%
+      merge at just one redirected edge. But push further and the curve reverses: each
+      redirect keeps the pulled-out endpoint connected to the wider network while leaving
+      the <em>other</em> endpoint one link short, with no guarantee anyone else picks up
+      the slack. Redirect all 13 and the team isn't merged into anything — it's shredded
+      into up to three brand-new degree-zero isolates, plus whatever fragments of the
+      original 9 still cling to each other. Over-shuffling a small, tightly-knit component
+      doesn't integrate it. It manufactures more of exactly the isolates section 05 was
+      about.
+    </p>
+
+    <h2><span class="idx">09</span>Why one shortcut is enough</h2>
+    <p>
+      This is the Watts–Strogatz result in miniature. We sized a proper WS sweep to match
+      the giant component (n=277, k=10) and marked Marvel's real clustering and path length
+      on it.
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/small-world.png" alt="Two side-by-side plots: clustering coefficient and mean shortest path length as a function of rewiring probability q, for Watts-Strogatz networks sized to match Marvel's giant component. Marvel's real clustering of 0.32 intersects the curve around q between 0.1 and 0.3. Marvel's real path length of 2.67 sits at or below even the fully rewired q=1 value." loading="lazy">
+      <figcaption>Marvel's path length (2.67) already matches the fully-rewired, near-random regime — while its clustering (0.32) sits where only a lightly-rewired lattice would land.</figcaption>
+    </figure>
+
+    <p>
+      Marvel's real average path length, 2.67 hops, is already as short as a
+      <em>fully</em> rewired (q=1) Watts–Strogatz network of the same size — while its
+      clustering sits where only mild rewiring, somewhere around q≈0.15–0.2, would put a
+      lattice. That gap is the small-world signature: distances collapse almost as soon as
+      a few long-range shortcuts exist, while clustering barely notices, because a single
+      shortcut can shorten many paths at once but only ever touches one or two local
+      neighborhoods. It's the exact same mechanism behind section 07's result — one edge,
+      not thirteen, is what it takes to fold an isolated pocket into a network that's
+      already this well-shortcut. The 17 can't be rescued by any amount of shuffling; the
+      island could have been rescued by one link the whole time.
+    </p>
+
+    <h2><span class="idx">10</span>What this settles, what it doesn't</h2>
+    <p>
+      Marvel is not a random graph, and it isn't news that it isn't — nothing interesting
+      ever is a random graph. The useful finding is narrower and comes straight out of
+      controlling the comparison properly: the degree sequence alone (i.e. "some
+      characters are hubs") accounts for real but partial structure in the tail shape, the
+      clustering, and the friendship paradox alike. What's left over after that control —
+      the residual heavy tail the CSN test can't fully pin down, the 25σ of clustering the
+      configuration model can't explain, and the fact that an isolated team's separateness
+      (unlike an isolated individual's) was never actually guaranteed — is where an actual
+      story about the Marvel universe would have to live.
+    </p>
+
+  </article>
+
+  <footer class="post-footer">
+    <p class="section-label">// Next</p>
+    <p>Week 3 opens soon: centrality — degree, closeness, betweenness, eigenvector — and
+      the question of who actually matters in this network, and by which definition.</p>
+    <p><a href="../index.html">&larr; Back to all posts</a></p>
+  </footer>
+
+  <script id="lab-data" type="application/json">
+{"popular": [{"id": "Spider-Man", "name": "Spider-Man", "degree": 106, "description": "Spider-Man is a superhero in American comic books published by Marvel Comics.", "neighbors": ["Abomination (character)", "Adam Warlock", "She-Venom (Patricia Robertson)", "Anya Corazon", "Beta Ray Bill", "Betsy Braddock", "Bill Foster (character)", "Black Bolt", "Black Cat (Marvel Comics)", "Black Marvel", "Black Widow (Natasha Romanova)", "Blade (character)", "Bob, Agent of Hydra", "Brian Braddock", "Captain Universe", "Cloak and Dagger (characters)", "Darkhawk", "Deadpool", "Deathlok", "Devil Dinosaur", "Doctor Nemesis", "Doctor Strange", "Dusk (comics)", "Eddie Brock", "Emma Frost", "Enigma (Marvel Comics)", "Ethan Edwards", "Fabio Medina", "Frankenstein's Monster (Marvel Comics)", "Frog-Man", "Ghost Rider", "Ghost Rider (Danny Ketch)", "Ghost Rider (Johnny Blaze)", "Gladiator (Kallark)", "Gwenpool", "Helix (Marvel Comics)", "Hellion (character)", "Hercules (Marvel Comics)", "Hit-Monkey", "Hulk", "Human Fly (character)", "Human Torch", "Hybrid (Scott Washington)", "Iron Man (Ultimate Marvel character)", "Iron Man 2020", "Janice Lincoln", "Jessica Jones", "John Jameson (character)", "Killraven", "Kristoff Vernard", "Luke Cage", "Machine Man", "Man-Thing", "Mania (character)", "Mayday Parker", "Misty Knight", "Mockingbird (Marvel Comics)", "Moon Knight", "Morbius", "Phil Grayfield", "Nightwatch (character)", "Noh-Varr", "Nova (Richard Rider)", "Paladin (comics)", "Phoenix (Guardians of the Galaxy)", "Powerhouse (Marvel Comics)", "Puck (Marvel Comics)", "Rachel Summers", "Radioactive Man (comics)", "Ravage 2099", "Ricochet (comics)", "Robbie Baldwin", "Ronin (Marvel Comics)", "Sabra (character)", "Satana (Marvel Comics)", "Scarlet Spider", "Scarlet Witch", "Scorpio (Marvel Comics)", "Sentry (Robert Reynolds)", "Shang-Chi", "She-Hulk", "She-Hulk (Lyra)", "Shuri (character)", "Silhouette (comics)", "Silk (character)", "Spider-Bitch (Ashley Barton)", "Spider-Girl", "Spider-Man Noir", "Spider-UK", "Spider-Woman (Gwen Stacy)", "Venom (character)", "Spider-Man (Marvel Mangaverse)", "Spider-Woman", "Star-Lord", "Steel Spider", "Storm (Marvel Comics)", "Tarantula (Marvel Comics)", "Thunderclap (comics)", "Typeface (character)", "U.S. Agent", "Werewolf by Night", "White Tiger (comics)", "Will o' the Wisp (comics)", "William Burnside (character)", "Wolverine (character)", "Xorn"]}, {"id": "Hulk", "name": "Hulk", "degree": 65, "description": "The Hulk is a superhero appearing in American comic books published by Marvel Comics.", "neighbors": ["Abomination (character)", "Adam Warlock", "Arabian Knight (character)", "Beta Ray Bill", "Bill Foster (character)", "Black Bolt", "Black Cat (Marvel Comics)", "Blue Marvel", "Bob, Agent of Hydra", "Brian Braddock", "Captain Universe", "Cloak and Dagger (characters)", "Crane Mother", "Deadpool", "Devil Dinosaur", "Devil Hulk", "Doctor Druid", "Doctor Strange", "Fandral", "Firebird (Marvel Comics)", "Gargoyle (comics)", "Gauntlet (Joseph Green)", "Ghost Rider", "Ghost Rider (Danny Ketch)", "Ghost Rider (Johnny Blaze)", "Gremlin (comics)", "Hellion (character)", "Hercules (Marvel Comics)", "Jean Grey", "She-Hulk", "She-Hulk (Lyra)", "Spider-Man", "Wolverine (character)", "Hulk 2099", "Hulkling", "Iron Man (Ultimate Marvel character)", "Isaiah Bradley", "John Jameson (character)", "Karnak (character)", "Killpower", "Kismet (Marvel Comics)", "Living Lightning", "Machine Man", "Motormouth (comics)", "Noh-Varr", "Northstar (character)", "Power Man (Victor Alvarez)", "Puck (Marvel Comics)", "Red Guardian", "Red Wolf (comics)", "Robbie Baldwin", "Rocket Raccoon", "Rockslide (character)", "Rom the Space Knight", "Sabra (character)", "Sentry (Robert Reynolds)", "Shuri (character)", "Solo (Marvel Comics)", "Spider-Bitch (Ashley Barton)", "Spider-Woman (Jessica Drew)", "Stingray (Marvel Comics)", "Thor Girl", "Toro (character)", "Werewolf by Night", "Wolverine (Ultimate Marvel character)"]}, {"id": "Wolverine_(character)", "name": "Wolverine (character)", "degree": 63, "description": "Wolverine is a superhero appearing in American comic books published by Marvel Comics.", "neighbors": ["Betsy Braddock", "Black Cat (Marvel Comics)", "Black Widow (Natasha Romanova)", "Bob, Agent of Hydra", "Cable (character)", "Chase Stein", "Cyclops (Marvel Comics)", "Darkhawk", "Deadpool", "Doom 2099", "Elsa Bloodstone", "Emma Frost", "Emrys Killebrew", "Garrison Kane", "Ghost Rider (Danny Ketch)", "Guardian (Marvel Comics)", "Gwenpool", "Hornet (comics)", "Hulk", "Hulkling", "Iron Fist (character)", "Iron Lad", "Isaiah Bradley", "Jean Grey", "Jessica Jones", "Jubilee (character)", "Junior Juniper", "Mania (character)", "Mayday Parker", "Misty Knight", "Moon Knight", "Morbius", "Noh-Varr", "Northstar (character)", "Oya (comics)", "Phoenix (Guardians of the Galaxy)", "Powerhouse (Marvel Comics)", "Puck (Marvel Comics)", "Rachel Summers", "Ricochet (comics)", "Robbie Baldwin", "Rom the Space Knight", "Scarlet Witch", "Scorpio (Marvel Comics)", "She-Hulk", "She-Hulk (Lyra)", "Shuri (character)", "Solo (Marvel Comics)", "Spider-Bitch (Ashley Barton)", "Spider-Woman (Jessica Drew)", "Star-Lord", "Storm (Marvel Comics)", "Surge (Marvel Comics)", "U.S. Agent", "Ursa Major (character)", "Venom (character)", "Vindicator (comics)", "Wild Child (character)", "Wolverine (Ultimate Marvel character)", "Hercules (Marvel Comics)", "Jericho Drumm", "Spider-Man", "Xorn"]}], "isolated": [{"id": "Baymax", "name": "Baymax", "degree": 0, "description": "Baymax is a fictional superhero character appearing in American comic books published by Marvel Comics.", "neighbors": []}, {"id": "Miracleman_(character)", "name": "Miracleman (character)", "degree": 0, "description": "Miracleman (originally known as Marvelman), whose civilian name is Michael \"Mike\" Moran, is a British Golden Age comic book superhero appearing in comic books first published by L.", "neighbors": []}, {"id": "Yo-Yo_Rodriguez", "name": "Yo-Yo Rodriguez", "degree": 0, "description": "Elena \"Yo-Yo\" Rodriguez (also known as Slingshot) is a superhero appearing in American comic books published by Marvel Comics.", "neighbors": []}]}
+  </script>
+
+  <script>
+    (function () {
+      var DATA = JSON.parse(document.getElementById("lab-data").textContent);
+      var NETWORK_AVG = 9.5, FRIEND_AVG = 22.1, MAX_BAR = 110;
+      var SVG_NS = "http://www.w3.org/2000/svg";
+      var svg = document.getElementById("lab-svg");
+      var tabsPop = document.getElementById("lab-tabs-popular");
+      var tabsIso = document.getElementById("lab-tabs-isolated");
+      var current = null;
+
+      // Per-character body plans for the lab figure. Each is an abstract,
+      // procedurally-drawn blocky silhouette built from primitive shapes
+      // (head/torso/limb geometry, not a costume) -- none of these depict
+      // any specific character's actual likeness, design, or artwork.
+      // They differ from each other in proportion, head shape, limb pose,
+      // and a small abstract accent mark, so each of the six gets its own
+      // distinct figure rather than one shared shape recolored.
+      var AVATARS = {
+        "Spider-Man": { headR: 7, head: "circle", torso: { x: 13, y: 20, w: 14, h: 22, rx: 6 }, armAngle: 50, armLen: 25, legSpread: 12, accent: "star", figScale: 1.18 },
+        "Hulk": { headR: 12, head: "square", torso: { x: 2, y: 13, w: 36, h: 36, rx: 6 }, armAngle: 22, armLen: 27, legSpread: 17, accent: "none", figScale: 1.4 },
+        "Wolverine_(character)": { headR: 8, head: "hex", torso: { x: 10, y: 19, w: 20, h: 25, rx: 6 }, armAngle: -16, armLen: 18, legSpread: 8, accent: "spikes", figScale: 1.0 },
+        "Baymax": { headR: 14, head: "circle", torso: { x: 3, y: 24, w: 34, h: 32, rx: 17 }, armAngle: 62, armLen: 11, legSpread: 6, accent: "none", figScale: 1.15 },
+        "Miracleman_(character)": { headR: 6, head: "circle", torso: { x: 15, y: 17, w: 10, h: 25, rx: 4 }, armAngle: 4, armLen: 26, legSpread: 4, accent: "cape", figScale: 1.25 },
+        "Yo-Yo_Rodriguez": { headR: 7, head: "circle", torso: { x: 12, y: 19, w: 16, h: 22, rx: 5 }, armAngle: -32, armLen: 20, legSpread: 17, accent: "motiontrail", figScale: 1.05 }
+      };
+      var DEFAULT_AVATAR = { headR: 8, head: "circle", torso: { x: 10, y: 19, w: 20, h: 24, rx: 7 }, armAngle: 18, armLen: 20, legSpread: 9, accent: "none", figScale: 1.0 };
+
+      function buildAvatarSymbol(symId, spec) {
+        var symbol = document.createElementNS(SVG_NS, "symbol");
+        symbol.setAttribute("id", symId);
+        symbol.setAttribute("viewBox", "0 0 40 84");
+        var cx = 20, headCy = spec.headR + 2;
+        var t = spec.torso;
+        var shoulderY = t.y + 4, hipY = t.y + t.h;
+
+        if (spec.accent === "cape") {
+          symbol.appendChild(el("path", { d: "M " + (t.x - 5) + " " + (shoulderY - 2) + " L 20 " + (hipY + 26) + " L " + (t.x + t.w + 5) + " " + (shoulderY - 2) + " Z" },
+            "fill:var(--amber); opacity:0.5;"));
+        }
+
+        symbol.appendChild(el("rect", { x: cx - spec.legSpread - 3.5, y: hipY, width: 7, height: Math.max(10, 82 - hipY), rx: 3.5 }));
+        symbol.appendChild(el("rect", { x: cx + spec.legSpread - 3.5, y: hipY, width: 7, height: Math.max(10, 82 - hipY), rx: 3.5 }));
+
+        symbol.appendChild(el("rect", { x: t.x - 7, y: shoulderY, width: 7, height: spec.armLen, rx: 3.5 },
+          "transform-origin: " + (t.x - 3.5) + "px " + shoulderY + "px;"));
+        var armL = symbol.lastChild;
+        armL.setAttribute("transform", "rotate(" + (-spec.armAngle) + " " + (t.x - 3.5) + " " + shoulderY + ")");
+
+        symbol.appendChild(el("rect", { x: t.x + t.w, y: shoulderY, width: 7, height: spec.armLen, rx: 3.5 }));
+        var armR = symbol.lastChild;
+        armR.setAttribute("transform", "rotate(" + spec.armAngle + " " + (t.x + t.w + 3.5) + " " + shoulderY + ")");
+
+        symbol.appendChild(el("rect", { x: t.x, y: t.y, width: t.w, height: t.h, rx: t.rx }));
+
+        if (spec.head === "circle") {
+          symbol.appendChild(el("circle", { cx: cx, cy: headCy, r: spec.headR }));
+        } else if (spec.head === "square") {
+          symbol.appendChild(el("rect", { x: cx - spec.headR, y: headCy - spec.headR, width: spec.headR * 2, height: spec.headR * 2, rx: 2 }));
+        } else if (spec.head === "hex") {
+          var pts = [];
+          for (var a = 0; a < 6; a++) {
+            var ang = Math.PI / 6 + a * Math.PI / 3;
+            pts.push((cx + spec.headR * Math.cos(ang)).toFixed(1) + "," + (headCy + spec.headR * Math.sin(ang)).toFixed(1));
+          }
+          symbol.appendChild(el("polygon", { points: pts.join(" ") }));
+        }
+
+        if (spec.accent === "star") {
+          // generic 4-point sparkle/compass mark, not any costume graphic
+          var sCy = t.y + t.h / 2, sR = 8;
+          symbol.appendChild(el("rect", { x: cx - sR, y: sCy - 2.2, width: sR * 2, height: 4.4, rx: 2.2 },
+            "fill:var(--amber); opacity:0.9;"));
+          symbol.appendChild(el("rect", { x: cx - sR, y: sCy - 2.2, width: sR * 2, height: 4.4, rx: 2.2, transform: "rotate(90 " + cx + " " + sCy + ")" },
+            "fill:var(--amber); opacity:0.9;"));
+        } else if (spec.accent === "spikes") {
+          // three small triangular shoulder spikes -- a generic armor motif
+          for (var s = -1; s <= 1; s++) {
+            var spX = cx + s * 10;
+            symbol.appendChild(el("polygon", { points: (spX - 4) + "," + (shoulderY + 2) + " " + spX + "," + (shoulderY - 9) + " " + (spX + 4) + "," + (shoulderY + 2) },
+              "fill:var(--amber); opacity:0.85;"));
+          }
+        } else if (spec.accent === "motiontrail") {
+          // arcing speed-lines trailing behind, suggesting quick motion
+          for (var m = 0; m < 3; m++) {
+            var mr = 11 + m * 7;
+            symbol.appendChild(el("path", { d: "M " + (cx - mr) + " " + (hipY - 4) + " a " + mr + " " + mr + " 0 0 1 0 -20" },
+              "fill:none; stroke:var(--amber); stroke-width:2.4; opacity:" + (0.8 - m * 0.16) + ";"));
+          }
+        }
+
+        return symbol;
+      }
+
+      function el(tag, attrs, styleStr) {
+        var e = document.createElementNS(SVG_NS, tag);
+        for (var k in attrs) e.setAttribute(k, attrs[k]);
+        if (styleStr) e.setAttribute("style", styleStr);
+        return e;
+      }
+
+      function makeTab(container, char, kind) {
+        var btn = document.createElement("button");
+        btn.className = "lab-pill " + kind;
+        btn.type = "button";
+        btn.textContent = char.name;
+        btn.addEventListener("click", function () { select(char, kind, btn); });
+        container.appendChild(btn);
+        return btn;
+      }
+
+      var buttons = [];
+      DATA.popular.forEach(function (c) { buttons.push(makeTab(tabsPop, c, "popular")); });
+      DATA.isolated.forEach(function (c) { buttons.push(makeTab(tabsIso, c, "isolated")); });
+
+      function select(char, kind, btn) {
+        current = char;
+        buttons.forEach(function (b) { b.classList.remove("active"); });
+        btn.classList.add("active");
+        render(char, kind);
+      }
+
+      function render(char, kind) {
+        // -- info panel --
+        document.getElementById("lab-name").textContent = char.name;
+        var line = char.degree + " connection" + (char.degree === 1 ? "" : "s") +
+          (char.degree === 0 ? " in this dataset" : " (undirected degree)");
+        document.getElementById("lab-degree-line").innerHTML = "<strong>" + line + "</strong>";
+        document.getElementById("lab-desc").textContent = char.description;
+
+        var charPct = Math.min(100, (char.degree / MAX_BAR) * 100);
+        var avgPct = Math.min(100, (NETWORK_AVG / MAX_BAR) * 100);
+        var friendPct = Math.min(100, (FRIEND_AVG / MAX_BAR) * 100);
+        document.getElementById("lab-bar-char").style.width = charPct + "%";
+        document.getElementById("lab-bar-char-val").textContent = char.degree;
+        document.getElementById("lab-bar-avg").style.width = avgPct + "%";
+        document.getElementById("lab-bar-friend").style.width = friendPct + "%";
+
+        // -- svg diagram --
+        while (svg.firstChild) svg.removeChild(svg.firstChild);
+        var cx = 280, cy = 190;
+
+        // Each character gets its own abstract figure (see AVATARS above).
+        var avatarKey = char.id || char.name;
+        var avatarSpec = AVATARS[avatarKey] || DEFAULT_AVATAR;
+        var symId = "hero-" + avatarKey.replace(/[^a-zA-Z0-9]/g, "");
+        var defs = document.createElementNS(SVG_NS, "defs");
+        defs.appendChild(buildAvatarSymbol(symId, avatarSpec));
+        svg.appendChild(defs);
+
+        var centerColor = kind === "popular" ? "var(--red)" : "var(--text-faint)";
+
+        if (char.neighbors.length === 0) {
+          var ring = el("circle", { cx: cx, cy: cy, r: 70, "stroke-width": 1.5, "stroke-dasharray": "5,6" },
+            "fill:none; stroke:var(--text-faint); opacity:0.7;");
+          ring.setAttribute("class", "lab-isolation-ring");
+          svg.appendChild(ring);
+          var t = el("text", { x: cx, y: cy + 105, "text-anchor": "middle" },
+            "fill:var(--text-faint); font-family:var(--font-mono); font-size:13px;");
+          t.textContent = "no recorded links in this dataset";
+          svg.appendChild(t);
+          document.getElementById("lab-caption").textContent = "0 connections — this character never appears alongside another in the snapshot. The figure below flickers because it barely registers in the data.";
+        } else {
+          var MAX_SHOWN = 48;
+          var neighbors = char.neighbors;
+          var shown = neighbors;
+          if (neighbors.length > MAX_SHOWN) {
+            shown = [];
+            var step = neighbors.length / MAX_SHOWN;
+            for (var i = 0; i < MAX_SHOWN; i++) shown.push(neighbors[Math.floor(i * step)]);
+          }
+          var R = 150;
+          shown.forEach(function (name, i) {
+            var angle = (i / shown.length) * Math.PI * 2 - Math.PI / 2;
+            var x = cx + R * Math.cos(angle);
+            var y = cy + R * Math.sin(angle) * 0.92;
+            var line = el("line", { x1: cx, y1: cy, x2: x, y2: y, "stroke-width": 0.6 },
+              "stroke:var(--border-strong); opacity:0.55; animation-delay:" + (i * 0.045) + "s;");
+            line.setAttribute("class", "lab-edge");
+            svg.appendChild(line);
+            var dot = el("circle", { cx: x, cy: y, r: 4.2 }, "fill:var(--amber); opacity:0.9;");
+            var title = document.createElementNS(SVG_NS, "title");
+            title.textContent = name;
+            dot.appendChild(title);
+            svg.appendChild(dot);
+          });
+          var extra = neighbors.length - shown.length;
+          if (extra > 0) {
+            var et = el("text", { x: cx, y: cy + 175, "text-anchor": "middle" },
+              "fill:var(--text-faint); font-family:var(--font-mono); font-size:12px;");
+            et.textContent = "+" + extra + " more connections not shown";
+            svg.appendChild(et);
+          }
+          document.getElementById("lab-caption").textContent =
+            shown.length + " of " + neighbors.length + " connections shown — hover a dot for the name. Wider aura and a steady pulse mark a hub.";
+        }
+
+        // -- animated character figure at the network's center --
+        var auraR = kind === "popular" ? 50 : 38;
+        var aura = el("circle", { cx: cx, cy: cy, r: auraR }, "fill:" + centerColor + "; filter:blur(3px);");
+        aura.setAttribute("class", "hero-aura " + kind);
+        svg.appendChild(aura);
+
+        var scale = (kind === "popular" ? 1.05 : 0.85) * (avatarSpec.figScale || 1);
+        var figW = 40 * scale, figH = 84 * scale;
+        var figGroup = el("g", {}, "fill:" + centerColor + ";");
+        figGroup.setAttribute("class", "hero-figure " + kind);
+        var use = document.createElementNS(SVG_NS, "use");
+        use.setAttributeNS("http://www.w3.org/1999/xlink", "href", "#" + symId);
+        use.setAttribute("href", "#" + symId);
+        use.setAttribute("x", cx - figW / 2);
+        use.setAttribute("y", cy - figH / 2 + 4);
+        use.setAttribute("width", figW);
+        use.setAttribute("height", figH);
+        figGroup.appendChild(use);
+        svg.appendChild(figGroup);
+      }
+
+      // start on Spider-Man
+      select(DATA.popular[0], "popular", buttons[0]);
+    })();
+  </script>
+
+  <script src="../assets/js/script.js"></script>
+</body>
+</html>
