@@ -1,0 +1,649 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Week 3 — Centrality, Cliques &amp; Community | Graphiverse</title>
+  <meta name="description" content="Who actually holds the Marvel universe together? An empirical dive into degree vs. betweenness centrality, closeness, eigenvector influence, maximal cliques, and bridge characters.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap">
+  <link rel="stylesheet" href="../assets/css/style.css">
+  <style>
+    /* ---- scoped styles for the Week 3 "Centrality & Clique Lab" explorable ---- */
+    .lab {
+      border: 1px solid var(--border-strong, #2a2e33);
+      background: var(--bg-panel-raised, #16191d);
+      padding: 26px 28px 30px;
+      margin: 2.2em 0;
+    }
+    .lab-tabs { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 6px; }
+    .lab-group { display: flex; flex-direction: column; gap: 8px; }
+    .lab-groups { display: flex; flex-wrap: wrap; gap: 28px; margin-bottom: 22px; }
+    .lab-group-label {
+      font-family: var(--font-mono, monospace); font-size: 0.7rem; letter-spacing: 0.14em;
+      text-transform: uppercase; color: var(--text-faint, #66707a);
+    }
+    .lab-pill {
+      font-family: var(--font-mono, monospace); font-size: 0.82rem; padding: 8px 14px;
+      border: 1px solid var(--border, #22262b); background: var(--bg-panel, #111316); color: var(--text-muted, #9aa5b1);
+      cursor: pointer; transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+    }
+    .lab-pill:hover { color: var(--text, #e4e7eb); border-color: var(--border-strong, #3a4048); }
+    .lab-pill.active.bridge { border-color: #e5c07b; color: #e5c07b; background: rgba(229, 192, 123, 0.08); }
+    .lab-pill.active.hub { border-color: #e06c75; color: #e06c75; background: rgba(224, 108, 117, 0.08); }
+    .lab-pill.active.clique-leader { border-color: #61afef; color: #61afef; background: rgba(97, 175, 239, 0.08); }
+
+    .lab-main { display: grid; grid-template-columns: 1.1fr 1fr; gap: 26px; align-items: start; }
+    @media (max-width: 760px) { .lab-main { grid-template-columns: 1fr; } }
+    
+    .lab-viz { background: var(--bg, #0b0c0e); border: 1px solid var(--border, #22262b); padding: 12px; }
+    .lab-viz svg { width: 100%; height: auto; display: block; }
+    
+    .lab-info h3 { font-family: var(--font-display, sans-serif); font-size: 1.9rem; margin: 0 0 4px; letter-spacing: 0.01em; }
+    .lab-info .lab-role { font-family: var(--font-mono, monospace); font-size: 0.85rem; color: var(--text-faint, #66707a); margin-bottom: 12px; }
+    .lab-info .lab-role strong { color: #e5c07b; }
+    .lab-info p { font-size: 0.95rem; color: var(--text-muted, #9aa5b1); margin: 0 0 18px; line-height: 1.5; }
+    
+    .lab-bars { display: flex; flex-direction: column; gap: 10px; margin-bottom: 20px; }
+    .lab-bar-row { display: grid; grid-template-columns: 120px 1fr 64px; align-items: center; gap: 10px; }
+    .lab-bar-label { font-family: var(--font-mono, monospace); font-size: 0.72rem; color: var(--text-faint, #66707a); text-transform: uppercase; letter-spacing: 0.04em; }
+    .lab-bar-track { height: 8px; background: var(--bg-panel, #111316); border: 1px solid var(--border, #22262b); position: relative; }
+    .lab-bar-fill { height: 100%; transition: width .3s cubic-bezier(0.16, 1, 0.3, 1); }
+    .lab-bar-fill.deg { background: #e06c75; }
+    .lab-bar-fill.bet { background: #e5c07b; }
+    .lab-bar-fill.clo { background: #61afef; }
+    .lab-bar-fill.eig { background: #98c379; }
+    .lab-bar-value { font-family: var(--font-mono, monospace); font-size: 0.78rem; color: var(--text, #e4e7eb); text-align: right; }
+
+    .clique-box {
+      border-top: 1px dashed var(--border-strong, #2a2e33);
+      padding-top: 14px;
+      margin-top: 10px;
+    }
+    .clique-title { font-family: var(--font-mono, monospace); font-size: 0.75rem; text-transform: uppercase; color: var(--text-faint, #66707a); margin-bottom: 8px; }
+    .clique-tags { display: flex; flex-wrap: wrap; gap: 6px; }
+    .clique-tag {
+      font-family: var(--font-mono, monospace); font-size: 0.72rem;
+      padding: 3px 8px; background: rgba(255,255,255,0.04); border: 1px solid var(--border, #22262b);
+      border-radius: 3px; color: var(--text-muted, #9aa5b1);
+    }
+    .lab-caption { margin-top: 14px; font-family: var(--font-mono, monospace); font-size: 0.78rem; color: var(--text-faint, #66707a); }
+
+    /* SVG animations and nodes */
+    .node-pulse { animation: pulse-ring 3s infinite ease-in-out; transform-box: fill-box; transform-origin: center; }
+    @keyframes pulse-ring {
+      0%, 100% { opacity: 0.3; transform: scale(1); }
+      50% { opacity: 0.8; transform: scale(1.15); }
+    }
+    .edge-flow { stroke-dasharray: 4, 4; animation: dash-move 20s linear infinite; }
+    @keyframes dash-move {
+      to { stroke-dashoffset: -100; }
+    }
+    
+    .placeholder-banner {
+      background: rgba(229, 192, 123, 0.08);
+      border: 1px dashed #e5c07b;
+      padding: 12px 16px;
+      border-radius: 4px;
+      font-family: var(--font-mono, monospace);
+      font-size: 0.82rem;
+      color: #e5c07b;
+      margin: 1.5em 0;
+    }
+
+    /* Table styling for centrality benchmarks */
+    .data-table-wrapper { overflow-x: auto; margin: 1.8em 0; }
+    .data-table { width: 100%; border-collapse: collapse; font-family: var(--font-mono, monospace); font-size: 0.85rem; text-align: left; }
+    .data-table th { background: var(--bg-panel, #111316); color: var(--text, #e4e7eb); padding: 10px 14px; border-bottom: 2px solid var(--border-strong, #2a2e33); }
+    .data-table td { padding: 10px 14px; border-bottom: 1px solid var(--border, #22262b); color: var(--text-muted, #9aa5b1); }
+    .data-table tr:hover td { background: rgba(255,255,255,0.02); color: var(--text, #e4e7eb); }
+    .highlight-val { color: #e5c07b; font-weight: 600; }
+  </style>
+</head>
+<body>
+
+  <nav class="site-nav">
+    <div class="brand"><a href="../index.html" style="color:inherit">GRAPH<span>IVERSE</span></a></div>
+    <div class="links">
+      <a href="../index.html#case-files">Posts</a>
+      <a href="../index.html#about">About</a>
+      <a href="https://github.com/cpsall/cpsall.github.io" target="_blank" rel="noopener">Source</a>
+    </div>
+  </nav>
+
+  <header class="post-header">
+    <div class="kicker">Week 03 — Centrality, Paths &amp; Subgraphs</div>
+    <h1>The Center of Gravity</h1>
+    <p class="dek">
+      If degree tells us who has the most friends, centrality reveals who actually controls the flow of information.
+      From gatekeepers and bottlenecks to maximal cliques and core groups, we measure the true heavyweights of the Marvel universe.
+    </p>
+    <div class="byline">Dimitrios, Andrei &amp; Christos — 02805 Social Graphs &amp; Interactions</div>
+  </header>
+
+  <article class="post-body">
+
+    <!-- Key Metrics Summary Banner -->
+    <div class="stat-row">
+      <div class="stat"><span class="n">0.065</span><span class="label">max betweenness (Wolverine)</span></div>
+      <div class="stat"><span class="n">0.526</span><span class="label">max closeness (Spider-Man)</span></div>
+      <div class="stat"><span class="n">8</span><span class="label">max clique size</span></div>
+      <div class="stat"><span class="n">10</span><span class="label">Longest Shortest-Path Length</span></div>
+    </div>
+
+    <p class="lead">
+      Last week, we established that Marvel is far more clustered and heavy-tailed than any matched Erdős–Rényi graph. But looking at raw edge counts only tells part of the story. A character can have a modest degree yet sit squarely on the shortest path between entire factions.
+    </p>
+
+    <h2><span class="idx">01</span>Degree vs. Betweenness: Popularity vs. Control</h2>
+    <p>
+      Degree centrality measures immediate visibility
+      \(C_D(v) = \frac{deg(v)}{N-1}\),
+      whereas Betweenness Centrality
+      \(C_B(v) = \sum_{s \neq v \neq t} \frac{\sigma_{st}(v)}{\sigma_{st}}\)
+      calculates the fraction of all shortest paths passing through node \(v\).
+  </p>
+    <p>
+      When we plot raw degree against betweenness centrality, clear archetype clusters emerge: high-degree volume hubs (e.g., Wolverine, Spider-Man) versus critical "broker" nodes that link distinct sub-universes (e.g., Doctor Strange bridging mystic realms to street-level heroes).
+    </p>
+
+    <figure class="figure-block">
+      <img src="../assets/img/degree-vs-betweenness.png" alt="Centrality comparison visualization" style="width:100%; height:auto; display:block; border:1px solid var(--border, #22262b); background:var(--bg, #0b0c0e);">
+      <figcaption>Comparing degree rank against betweenness rank. Characters lying significantly above the diagonal act as structural bridges across distinct communities.</figcaption>
+    </figure>
+
+    <p>
+      The surprise of the graph is Hercules, who despite a modest degree and closeness, ranks second in betweenness. 
+    </p>
+
+    <h2><span class="idx">02</span>Closeness Centrality &amp; Eigenvector Influence</h2>
+    <p>
+      Closeness Centrality \(C_C(v) = \frac{N-1}{\sum_{u \neq v} d(v, u)}\) measures how few hops a node is from every other character in the giant component. Meanwhile, Eigenvector Centrality assigns high weight to nodes connected to other well-connected nodes.
+    </p>
+
+    <div class="data-table-wrapper">
+      <table class="data-table">
+        <thead>
+          <tr>
+            <th>Rank</th>
+            <th>Character</th>
+            <th>Degree \(k\)</th>
+            <th>Betweenness \(C_B\)</th>
+            <th>Closeness \(C_C\)</th>
+            <th>Eigenvector \(x_v\)</th>
+          </tr>
+        </thead>
+        <tbody id="centrality-table">
+          <script>
+            async function loadCentralityTable() {
+                try {
+                    const response = await fetch("../assets/data/week3-analysis.json");
+                    const data = await response.json();
+
+                    const tableBody = document.getElementById("centrality-table");
+
+                    // Sort by betweenness, highest first, and take the top 10
+                    const topNodes = data.nodes
+                        .sort((a, b) => b.betweenness - a.betweenness)
+                        .slice(0, 10);
+
+                    // Add one row for each node
+                    topNodes.forEach((node, index) => {
+                        const row = document.createElement("tr");
+
+                        row.innerHTML = `
+                            <td>${index + 1}</td>
+                            <td>${node.name}</td>
+                            <td>${node.degree}</td>
+                            <td>${node.betweenness}</td>
+                            <td>${node.closeness}</td>
+                            <td>${node.eigenvector}</td>
+                        `;
+
+                        tableBody.appendChild(row);
+                    });
+
+                } catch (error) {
+                    console.error("AAAAAAAAAAAAAAAAAAAA:", error);
+                }
+            }
+
+            loadCentralityTable();
+            </script>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="island-card">
+      <p class="section-label">Key Observation — Betweenness vs Eigenvector</p>
+      <p class="members">
+        Most of the characters in the top ranks were more or less expected. Hercules however is an interesting surprise. This surprise is intuitively explained by the eigenvector. The more expected characters have a high eigenvector, showing their overall popularity. Hercules however has quite low, therefore acting as a broker while relatively unimportant.
+      </p>
+    </div>
+
+    <h2><span class="idx">03</span>Interactive Lab: Centrality Profiles &amp; Roles</h2>
+    <p>
+      Select a character below to examine their multi-dimensional centrality profile and observe their local network position, role archetype, and clique affiliations.
+    </p>
+
+    <!-- Lab Widget Component -->
+    <div class="lab">
+      <div class="lab-groups">
+        <div class="lab-group">
+          <span class="lab-group-label">Character Archetypes</span>
+          <div class="lab-tabs" id="lab-tabs"></div>
+        </div>
+      </div>
+
+      <div class="lab-main">
+        <!-- <div class="lab-viz">
+          <svg id="lab-svg" viewBox="0 0 500 360" preserveAspectRatio="xMidYMid meet"></svg>
+        </div> -->
+        <div class="lab-info">
+          <h3 id="lab-name">—</h3>
+          <p class="lab-role" id="lab-role-line">—</p>
+          <p id="lab-desc">—</p>
+          
+          <div class="lab-bars">
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">Degree</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill deg" id="bar-deg" style="width:0%"></div></div>
+              <span class="lab-bar-value" id="val-deg">0</span>
+            </div>
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">Betweenness</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill bet" id="bar-bet" style="width:0%"></div></div>
+              <span class="lab-bar-value" id="val-bet">0.00</span>
+            </div>
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">Closeness</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill clo" id="bar-clo" style="width:0%"></div></div>
+              <span class="lab-bar-value" id="val-clo">0.00</span>
+            </div>
+            <div class="lab-bar-row">
+              <span class="lab-bar-label">Eigenvector</span>
+              <div class="lab-bar-track"><div class="lab-bar-fill eig" id="bar-eig" style="width:0%"></div></div>
+              <span class="lab-bar-value" id="val-eig">0.00</span>
+            </div>
+          </div>
+
+          <!-- <div class="clique-box">
+            <div class="clique-title">Maximal Clique Affiliations</div>
+            <div class="clique-tags" id="lab-cliques"></div>
+          </div> -->
+        </div>
+      </div>
+      
+    </div>
+
+    <h2><span class="idx">04</span>Maximal Cliques &amp; Cohesive Subgroups</h2>
+    <p>
+      A <strong>clique</strong> is a fully connected subgraph where every single node shares an edge with every other node. Using the Bron–Kerbosch algorithm, we identified all maximal cliques across the Marvel network.
+    </p>
+
+    <div class="stat-row">
+      <div class="stat"><span class="n">6</span><span class="label">cliques of size 8</span></div>
+      <div class="stat"><span class="n">2</span><span class="label">cliques of size 7</span></div>
+      <div class="stat"><span class="n">25</span><span class="label">cliques of size 6</span></div>
+      <div class="stat"><span class="n">332</span><span class="label">triangles</span></div>
+    </div>
+
+    <p>
+      The largest cliques center on the core <strong>X-Men</strong> roster. Apart from being very connected to each other, the X-Men feature other prominent characters as well, such as Spider-Man and Hercules.
+    </p>
+
+    <h2><span class="idx">05</span>Summary &amp; Key Findings</h2>
+    <p>
+      Measuring multiple dimensions of centrality reveals that "importance" in a social graph is contextual:
+    </p>
+    <ul>
+      <li><strong>Wolverine</strong> and <strong>Hercules</strong> are the supreme brokers, routing paths across the widest variety of distinct story arcs.</li>
+      <li><strong>Spider-Man</strong> follows closely behind, although his webs are not as strong in this context.</li>
+      <li><strong>X-Men</strong> are strongly connected to each other, forming multiple cliques.</li>
+    </ul>
+
+  </article>
+
+  <footer class="post-footer">
+    <p class="section-label">// Next</p>
+    <p>Week 4 opens soon: Community Detection &amp; Modularity — partition algorithms, Louvain vs. Infomap, and mapping Marvel's true factions. Perhaps this will shed some light on the X-Men's cliques, and perhaps bring to light the so far hidden Avengers, or even othen surprising factions...</p>
+    <p><a href="../index.html">&larr; Back to all posts</a></p>
+  </footer>
+
+<!-- Interactive Script for Week 3 Explorable (Dynamic JSON Fetch) -->
+<script>
+  (function () {
+    const SVG_NS = "http://www.w3.org/2000/svg";
+    const tabsContainer = document.getElementById("lab-tabs");
+    const svg = document.getElementById("lab-svg");
+    const buttons = [];
+
+    // Helper metric getters supporting standard NetworkX and custom JSON naming conventions
+    const getDeg = n => Number(n.degree ?? n.degree_centrality ?? n.degree_undirected ?? n.deg ?? 0);
+    const getBet = n => Number(n.betweenness ?? n.betweenness_centrality ?? n.bet ?? 0);
+    const getClo = n => Number(n.closeness ?? n.closeness_centrality ?? n.clo ?? 0);
+    const getEig = n => Number(n.eigenvector ?? n.eigenvector_centrality ?? n.eig ?? 0);
+
+    // Default max bounds for normalising metric bars
+    let maxDeg = 120, maxBet = 0.16, maxClo = 0.55, maxEig = 0.40;
+
+    function init() {
+      fetch("../assets/data/week3-analysis.json")
+        .then(res => res.json())
+        .then(data => {
+          const rawNodes = parseNodes(data);
+
+          // Calculate dynamic scale maxima if nodes exist
+          if (rawNodes.length > 0) {
+            maxDeg = Math.max(...rawNodes.map(getDeg), 1);
+            maxBet = Math.max(...rawNodes.map(getBet), 0.01);
+            maxClo = Math.max(...rawNodes.map(getClo), 0.01);
+            maxEig = Math.max(...rawNodes.map(getEig), 0.01);
+          }
+
+          // Pick pre-formatted characters or auto-generate top archetype characters from node metrics
+          let characters = data.lab_characters || data.characters || data.top_characters;
+
+          if (!characters || !Array.isArray(characters) || characters.length === 0) {
+            const sortedBet = [...rawNodes].sort((a, b) => getBet(b) - getBet(a));
+            const featured = sortedBet.slice(0, 6);
+
+            characters = featured.map(node => {
+              const nodeName = node.name || node.node_id || node.id || "Unknown";
+              const betVal = getBet(node);
+              const degVal = getDeg(node);
+              const eigenVal = getEig(node);
+              const closeVal = getClo(node);
+
+              return {
+                id: node.node_id || node.id || nodeName,
+                name: nodeName,
+                role: node.role || (
+                  degVal >= 90 && closeVal >= 0.52 && eigenVal >= 0.30
+                      ? "Central Hub"
+
+                  : degVal >= 50 && closeVal >= 0.46 && eigenVal >= 0.20
+                      ? "Community Hub"
+
+                  : degVal >= 55 && closeVal >= 0.47 && eigenVal >= 0.20
+                      ? "Influential Connector"
+
+                  : degVal >= 35 && closeVal >= 0.44 && eigenVal >= 0.14
+                      ? "Broad Connector"
+
+                  : degVal < 35 && closeVal < 0.44 && eigenVal < 0.12
+                      ? "Peripheral Bridge"
+
+                  : "Bridge"
+              ),
+                roleKind: node.roleKind || (
+                  degVal >= 90 && closeVal >= 0.52 && eigenVal >= 0.30
+                      ? "central_hub"
+
+                  : degVal >= 50 && closeVal >= 0.46 && eigenVal >= 0.20
+                      ? "community_hub"
+
+                  : degVal >= 55 && closeVal >= 0.47 && eigenVal >= 0.20
+                      ? "influential_connector"
+
+                  : degVal >= 35 && closeVal >= 0.44 && eigenVal >= 0.14
+                      ? "broad_connector"
+
+                  : degVal < 35 && closeVal < 0.44 && eigenVal < 0.12
+                      ? "peripheral_bridge"
+
+                  : "bridge"
+              ),
+                description: node.description || `Key character with degree ${degVal} and betweenness centrality ${betVal.toFixed(4)}.`,
+                degree: degVal,
+                betweenness: betVal,
+                closeness: getClo(node),
+                eigenvector: getEig(node),
+                cliques: parseCliques(node),
+                graph: node.graph || generateEgoLayout(node, rawNodes, data)
+              };
+            });
+          }
+
+          renderLab(characters);
+        })
+        .catch(err => {
+          console.error("Error loading lab data from week3-analysis.json:", err);
+        });
+    }
+
+    // Normalizes nodes whether week3-analysis.json uses Arrays, Dictionaries, or separate metric maps
+    function parseNodes(data) {
+      if (Array.isArray(data)) return data;
+
+      const nodeSource = data.nodes || data.node_metrics || data.characters;
+      if (Array.isArray(nodeSource)) return nodeSource;
+
+      // Handles key-value map formats e.g. { "Jon Snow": { "degree": 12, ... } }
+      if (nodeSource && typeof nodeSource === "object") {
+        return Object.entries(nodeSource).map(([key, val]) => ({
+          node_id: key,
+          name: key,
+          ...(typeof val === "object" ? val : { degree: val })
+        }));
+      }
+
+      // Handles separate dictionary maps e.g. { degree: { "A": 10 }, betweenness: { "A": 0.1 } }
+      if (data.degree || data.betweenness || data.betweenness_centrality) {
+        const keys = new Set([
+          ...Object.keys(data.degree || {}),
+          ...Object.keys(data.betweenness || data.betweenness_centrality || {}),
+          ...Object.keys(data.closeness || data.closeness_centrality || {}),
+          ...Object.keys(data.eigenvector || data.eigenvector_centrality || {})
+        ]);
+        return Array.from(keys).map(key => ({
+          node_id: key,
+          name: key,
+          degree: data.degree?.[key] ?? 0,
+          betweenness: (data.betweenness || data.betweenness_centrality)?.[key] ?? 0,
+          closeness: (data.closeness || data.closeness_centrality)?.[key] ?? 0,
+          eigenvector: (data.eigenvector || data.eigenvector_centrality)?.[key] ?? 0
+        }));
+      }
+
+      return [];
+    }
+
+    // Normalizes community and clique tags across various JSON keys
+    function parseCliques(node) {
+      if (Array.isArray(node.cliques)) return node.cliques;
+      if (Array.isArray(node.communities)) return node.communities;
+      if (node.community !== undefined) return [`Community ${node.community}`];
+      if (node.clique !== undefined) return [`Clique ${node.clique}`];
+      if (node.group !== undefined) return [`Group ${node.group}`];
+      return ["Giant Component"];
+    }
+
+    // Resolves node neighbors from node attributes or global links/edges array
+    function extractNeighbors(node, allNodes, rootData) {
+      if (Array.isArray(node.neighbors)) return node.neighbors;
+      if (Array.isArray(node.adj)) return node.adj;
+      if (Array.isArray(node.adjacency)) return node.adjacency;
+
+      const links = rootData.links || rootData.edges || [];
+      if (Array.isArray(links) && links.length > 0) {
+        const id = node.node_id || node.id || node.name;
+        const neighborSet = new Set();
+        links.forEach(l => {
+          const src = typeof l.source === "object" ? l.source.id : l.source;
+          const tgt = typeof l.target === "object" ? l.target.id : l.target;
+          if (src === id) neighborSet.add(tgt);
+          if (tgt === id) neighborSet.add(src);
+        });
+        if (neighborSet.size > 0) return Array.from(neighborSet);
+      }
+      return [];
+    }
+
+    function renderLab(characters) {
+      tabsContainer.innerHTML = "";
+      buttons.length = 0;
+
+      characters.forEach((char) => {
+        const btn = document.createElement("button");
+        btn.className = "lab-pill " + (char.roleKind || "hub");
+        btn.type = "button";
+        btn.textContent = char.name;
+        btn.addEventListener("click", () => selectCharacter(char, btn));
+        tabsContainer.appendChild(btn);
+        buttons.push(btn);
+      });
+
+      if (characters.length > 0) {
+        selectCharacter(characters[0], buttons[0]);
+      }
+    }
+
+    function selectCharacter(char, activeBtn) {
+      buttons.forEach(b => b.classList.remove("active"));
+      if (activeBtn) activeBtn.classList.add("active");
+
+      document.getElementById("lab-name").textContent = char.name || "Unknown";
+      document.getElementById("lab-role-line").innerHTML = "Role: <strong>" + (char.role || "N/A") + "</strong>";
+      document.getElementById("lab-desc").textContent = char.description || "";
+
+      const deg = char.degree ?? 0;
+      const bet = char.betweenness ?? 0;
+      const clo = char.closeness ?? 0;
+      const eig = char.eigenvector ?? 0;
+
+      setBar("bar-deg", "val-deg", deg, maxDeg, deg);
+      setBar("bar-bet", "val-bet", bet, maxBet, bet.toFixed(4));
+      setBar("bar-clo", "val-clo", clo, maxClo, clo.toFixed(4));
+      setBar("bar-eig", "val-eig", eig, maxEig, eig.toFixed(4));
+
+      const cliqueContainer = document.getElementById("lab-cliques");
+      cliqueContainer.innerHTML = "";
+      (char.cliques || []).forEach(clq => {
+        const span = document.createElement("span");
+        span.className = "clique-tag";
+        span.textContent = clq;
+        cliqueContainer.appendChild(span);
+      });
+
+      renderGraph(char.graph, char.roleKind);
+    }
+
+    function setBar(barId, valId, rawVal, maxVal, displayVal) {
+      const pct = Math.min(100, Math.max(0, (rawVal / (maxVal || 1)) * 100));
+      document.getElementById(barId).style.width = pct + "%";
+      document.getElementById(valId).textContent = displayVal;
+    }
+
+    function renderGraph(graph, roleKind) {
+      while (svg.firstChild) svg.removeChild(svg.firstChild);
+      if (!graph || !graph.nodes) return;
+
+      let mainColor = "#e06c75";
+      if (roleKind === "bridge") mainColor = "#e5c07b";
+      if (roleKind === "clique-leader") mainColor = "#61afef";
+
+      // Draw Edges
+      (graph.edges || []).forEach(e => {
+        const sourceNode = graph.nodes.find(n => n.id === e.source);
+        const targetNode = graph.nodes.find(n => n.id === e.target);
+        if (sourceNode && targetNode) {
+          const line = document.createElementNS(SVG_NS, "line");
+          line.setAttribute("x1", sourceNode.x);
+          line.setAttribute("y1", sourceNode.y);
+          line.setAttribute("x2", targetNode.x);
+          line.setAttribute("y2", targetNode.y);
+          line.setAttribute("stroke", "var(--border-strong, #3a4048)");
+          line.setAttribute("stroke-width", "1.5");
+          line.setAttribute("opacity", "0.6");
+          if (e.source === graph.nodes[0].id || e.target === graph.nodes[0].id) {
+            line.setAttribute("stroke", mainColor);
+            line.setAttribute("opacity", "0.8");
+          }
+          svg.appendChild(line);
+        }
+      });
+
+      // Draw Nodes
+      (graph.nodes || []).forEach(n => {
+        const g = document.createElementNS(SVG_NS, "g");
+
+        if (n.type === "target") {
+          const pulse = document.createElementNS(SVG_NS, "circle");
+          pulse.setAttribute("cx", n.x);
+          pulse.setAttribute("cy", n.y);
+          pulse.setAttribute("r", n.r + 8);
+          pulse.setAttribute("fill", mainColor);
+          pulse.setAttribute("class", "node-pulse");
+          pulse.setAttribute("opacity", "0.3");
+          g.appendChild(pulse);
+        }
+
+        const circle = document.createElementNS(SVG_NS, "circle");
+        circle.setAttribute("cx", n.x);
+        circle.setAttribute("cy", n.y);
+        circle.setAttribute("r", n.r);
+        circle.setAttribute("fill", n.type === "target" ? mainColor : "var(--bg-panel-raised, #16191d)");
+        circle.setAttribute("stroke", n.type === "target" ? "#ffffff" : mainColor);
+        circle.setAttribute("stroke-width", "2");
+
+        const title = document.createElementNS(SVG_NS, "title");
+        title.textContent = n.id;
+        circle.appendChild(title);
+        g.appendChild(circle);
+
+        const text = document.createElementNS(SVG_NS, "text");
+        text.setAttribute("x", n.x);
+        text.setAttribute("y", n.y + n.r + 14);
+        text.setAttribute("text-anchor", "middle");
+        text.setAttribute("fill", n.type === "target" ? "var(--text, #e4e7eb)" : "var(--text-muted, #9aa5b1)");
+        text.setAttribute("font-family", "var(--font-mono, monospace)");
+        text.setAttribute("font-size", "11px");
+        text.textContent = n.id;
+        g.appendChild(text);
+
+        svg.appendChild(g);
+      });
+    }
+
+    // Fallback radial layout for ego graphs if precomputed layout coordinates are absent
+    function generateEgoLayout(centerNode, allNodes, rootData) {
+      const centerId = centerNode.name || centerNode.node_id || centerNode.id;
+      const nodes = [{ id: centerId, x: 250, y: 180, r: 16, type: "target" }];
+      const edges = [];
+
+      const rawNeighbors = extractNeighbors(centerNode, allNodes, rootData);
+      const neighborList = rawNeighbors
+        .slice(0, 8)
+        .map(id => {
+          if (typeof id === "object") return id;
+          return allNodes.find(n => (n.node_id || n.id || n.name) === id) || { name: id, id: id };
+        });
+
+      const numNeighbors = neighborList.length || 5;
+      const radius = 110;
+
+      for (let i = 0; i < numNeighbors; i++) {
+        const angle = (i * 2 * Math.PI) / numNeighbors - Math.PI / 2;
+        const neighbor = neighborList[i];
+        const nName = neighbor ? (neighbor.name || neighbor.id || neighbor.node_id) : `Neighbor ${i + 1}`;
+        const nx = 250 + radius * Math.cos(angle);
+        const ny = 180 + radius * Math.sin(angle);
+
+        nodes.push({ id: nName, x: nx, y: ny, r: 10, type: "neighbor" });
+        edges.push({ source: centerId, target: nName });
+      }
+
+      return { nodes, edges };
+    }
+
+    window.addEventListener("DOMContentLoaded", init);
+  })();
+</script>
+
+  <script src="../assets/js/script.js"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@4/tex-mml-chtml.js"></script>
+
+</body>
+</html>
