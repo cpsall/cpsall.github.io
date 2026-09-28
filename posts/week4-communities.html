@@ -1,0 +1,1041 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<title>Week 4 — Communities & Backbone | Graphiverse</title>
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+<style>
+  :root {
+  --bg: #0b0c0e;
+  --bg-panel: #111316;
+  --bg-panel-raised: #16191d;
+  --border: #22262b;
+  --border-strong: #2f353b;
+  --text: #e4e7eb;
+  --text-muted: #9aa5b1;
+  --text-faint: #66707a;
+
+  --accent1: #ef9a61;
+  --accent2: #e5c07b;
+  --accent3: #98c379;
+  --accent4: #e06c75;
+
+  --font-display: "Bebas Neue", sans-serif;
+  --font-main: "Inter", sans-serif;
+  --font-mono: "JetBrains Mono", monospace;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: var(--font-main);
+  line-height: 1.7;
+}
+
+.site-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 24px 48px;
+  border-bottom: 1px solid var(--border);
+}
+
+.brand {
+  font-family: var(--font-display);
+  font-size: 2rem;
+  letter-spacing: .06em;
+}
+
+.brand a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.brand span {
+  color: var(--accent1);
+}
+
+.links a {
+  color: var(--text-muted);
+  text-decoration: none;
+  margin-left: 20px;
+  transition: color .15s ease;
+}
+
+.links a:hover {
+  color: var(--text);
+}
+
+.post-header {
+  max-width: 1200px;
+  margin: auto;
+  padding: 80px 40px;
+}
+
+.kicker {
+  font-family: var(--font-mono);
+  text-transform: uppercase;
+  letter-spacing: .15em;
+  color: var(--accent2);
+  font-size: .8rem;
+}
+
+h1 {
+  font-family: var(--font-display);
+  font-size: 5rem;
+  margin: .1em 0;
+  letter-spacing: .03em;
+}
+
+.dek {
+  max-width: 800px;
+  color: var(--text-muted);
+  font-size: 1.2rem;
+}
+
+.post-body {
+  max-width: 1200px;
+  margin: auto;
+  padding: 0 40px 100px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 18px;
+  margin: 50px 0;
+}
+
+.stat {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border);
+  padding: 24px;
+}
+
+.stat .n {
+  display: block;
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: var(--font-mono);
+}
+
+.stat .label {
+  color: var(--text-muted);
+  font-size: 0.85rem;
+}
+
+h2 {
+  margin-top: 90px;
+  font-size: 2rem;
+  font-family: var(--font-display);
+  letter-spacing: 0.02em;
+}
+
+.idx {
+  color: var(--accent1);
+  margin-right: 10px;
+  font-family: var(--font-mono);
+}
+
+.data-table-wrapper {
+  overflow-x: auto;
+  margin: 1.8em 0;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+  text-align: left;
+}
+
+.data-table th {
+  background: var(--bg-panel);
+  color: var(--text);
+  padding: 12px;
+  border-bottom: 2px solid var(--border-strong);
+}
+
+.data-table td {
+  padding: 12px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.data-table tr:hover td {
+  background: var(--bg-panel-raised);
+  color: var(--text);
+}
+
+.island-card {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border);
+  padding: 24px;
+  margin: 30px 0;
+}
+
+.section-label {
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  letter-spacing: .1em;
+  color: var(--accent2);
+  text-transform: uppercase;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.tag {
+  border: 1px solid var(--border);
+  background: rgba(255, 255, 255, .03);
+  padding: 6px 10px;
+  font-family: var(--font-mono);
+  font-size: .8rem;
+  color: var(--text-muted);
+}
+
+.lab {
+  background: var(--bg-panel-raised);
+  border: 1px solid var(--border-strong);
+  padding: 30px;
+  margin-top: 30px;
+}
+
+.lab-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 12px;
+}
+
+.lab-btn {
+  background: var(--bg-panel);
+  border: 1px solid var(--border);
+  color: var(--text-muted);
+  padding: 8px 14px;
+  font-family: var(--font-mono);
+  font-size: 0.82rem;
+  cursor: pointer;
+  transition: border-color .15s ease, color .15s ease, background-color .15s ease;
+}
+
+.lab-btn:hover {
+  color: var(--text);
+  border-color: var(--border-strong);
+}
+
+.lab-btn.active {
+  border-color: var(--accent1);
+  color: var(--accent1);
+  background: rgba(97, 175, 239, 0.08);
+}
+
+.lab-content {
+  margin-top: 25px;
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 25px;
+  margin-top: 25px;
+}
+
+.info-card {
+  padding: 20px;
+  border: 1px solid var(--border);
+  background: var(--bg-panel);
+}
+
+.info-card h3 {
+  font-family: var(--font-display);
+  font-size: 1.8rem;
+  margin-top: 0;
+  margin-bottom: 12px;
+  letter-spacing: 0.02em;
+}
+
+.banner {
+  border: 1px dashed var(--accent2);
+  background: rgba(229, 192, 123, 0.08);
+  color: var(--accent2);
+  padding: 18px;
+  margin: 30px 0;
+  font-family: var(--font-mono);
+  font-size: 0.85rem;
+}
+
+ul li {
+  margin-bottom: .7em;
+}
+
+.post-footer {
+  max-width: 1200px;
+  margin: auto;
+  padding: 40px;
+  border-top: 1px solid var(--border);
+  color: var(--text-muted);
+}
+
+.post-footer a {
+  color: var(--accent1);
+  text-decoration: none;
+}
+
+@media (max-width: 800px) {
+  .site-nav {
+    padding: 20px 24px;
+  }
+
+  .post-header,
+  .post-body {
+    padding-left: 20px;
+    padding-right: 20px;
+  }
+
+  h1 {
+    font-size: 3rem;
+  }
+
+  .info-grid {
+    grid-template-columns: 1fr;
+  }
+}
+</style>
+</head>
+<body>
+
+<nav class="site-nav">
+  <div class="brand">
+    GRAPH<span>IVERSE</span>
+  </div>
+
+  <div class="links">
+    <a href="#">Posts</a>
+    <a href="#">About</a>
+  </div>
+</nav>
+
+<header class="post-header">
+
+  <div class="kicker">
+    Week 04 • Communities & Backbone Analysis
+  </div>
+
+  <h1>
+    Philosophical Communities
+  </h1>
+
+  <p class="dek">
+    Comparing Louvain and Infomap communities,
+    tracing Aristotle's overlapping intellectual worlds,
+    and identifying the critical backbone that holds the
+    network of philosophy together.
+  </p>
+
+</header>
+
+<article class="post-body">
+
+  <div id="stats" class="stat-row"></div>
+
+  <h2><span class="idx">01</span>Community Detection Agreement</h2>
+
+  <p>
+    We compare Louvain and Infomap partitions using the
+    Normalized Mutual Information score and examine the
+    philosophers whose memberships differ.
+  </p>
+
+  <div class="island-card">
+    <p class="section-label">Agreement Summary</p>
+    <p id="agreement-summary"></p>
+  </div>
+
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>Philosopher</th>
+      <th>Louvain</th>
+      <th>Infomap</th>
+    </tr>
+    </thead>
+    <tbody id="disagreements-table"></tbody>
+  </table>
+
+  <div class="lab">
+    <div class="section-label">
+      Disagreement Explorer
+    </div>
+
+    <div id="disagreement-tabs" class="lab-tabs"></div>
+
+    <div id="disagreement-details" class="lab-content"></div>
+  </div>
+
+  
+<h2><span class="idx">02</span> Louvain vs Infomap Communities</h2>
+
+  <div class="info-grid">
+
+    <div class="info-card">
+      <h3>Louvain</h3>
+      <div id="louvain-communities"></div>
+    </div>
+
+    <div class="info-card">
+      <h3>Infomap</h3>
+      <div id="infomap-communities"></div>
+    </div>
+
+  </div>
+
+  <div class="info-grid">
+    <div class="info-card community-card">
+
+      <!-- Toggle buttons -->
+      <div class="community-toggle">
+        <button class="active" data-algorithm="louvain">Louvain</button>
+        <button data-algorithm="infomap">Infomap</button>
+      </div>
+
+      <!-- Community map -->
+      <div class="community-map">
+        <img
+          id="community-image"
+          src="../assets/img/philosopher_communities_louvain.png"
+          alt="Louvain community map"
+        />
+      </div>
+
+      <!-- Description and discussion -->
+      <div class="community-description">
+        <h3 id="community-title">Louvain</h3>
+        <p id="community-text">
+          Louvain detects communities by optimizing modularity.
+          It groups nodes into densely connected clusters with
+          relatively fewer connections between them.
+        </p>
+        <p id="community-discussion">
+          Examine the size and distribution of the detected
+          communities, and how clearly the clusters are separated.
+        </p>
+      </div>
+
+    </div>
+  </div>
+
+  <style>
+    .community-card {
+      width: 100%;
+    }
+
+    .community-toggle {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 20px;
+    }
+
+    .community-toggle button {
+      padding: 9px 20px;
+      border: 1px solid #ccc;
+      border-radius: 8px;
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.95rem;
+      transition: background 0.2s, color 0.2s;
+    }
+
+    .community-toggle button.active {
+      background: #333;
+      color: white;
+      border-color: #333;
+    }
+
+    .community-map {
+      width: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background: #f7f7f7;
+      border-radius: 10px;
+      padding: 12px;
+    }
+
+    .community-map img {
+      display: block;
+      max-width: 100%;
+      max-height: 650px;
+      object-fit: contain;
+      border-radius: 6px;
+    }
+
+    .community-description {
+      margin-top: 20px;
+      line-height: 1.6;
+    }
+
+    .community-description h3 {
+      margin-bottom: 10px;
+    }
+
+    .community-description p {
+      margin: 8px 0;
+    }
+  </style>
+
+  <script>
+    const communityData = {
+      louvain: {
+        title: "Louvain",
+        image: "../assets/img/philosopher_communities_louvain.png",
+        alt: "Louvain community detection map",
+        text: "Louvain detects communities by optimizing modularity. It groups nodes into densely connected clusters with relatively fewer connections between them.",
+        discussion: "Notice that Aristotle leads the third largest community, indicating that although he connects everyone everywhere, his own faction is not the greatest."
+      },
+      infomap: {
+        title: "Infomap",
+        image: "../assets/img/philosopher_communities_infomap.png",
+        alt: "Infomap community detection map",
+        text: "Infomap detects communities by minimizing the description length of a random walk on the network. It identifies groups within which a random walker tends to remain for relatively long periods.",
+        discussion: "Infomap favors a more centralized approach, creating a huge community around Aristotle."
+      }
+    };
+
+    const buttons = document.querySelectorAll(
+      ".community-toggle button"
+    );
+    const image = document.getElementById("community-image");
+    const title = document.getElementById("community-title");
+    const text = document.getElementById("community-text");
+    const discussion = document.getElementById("community-discussion");
+
+    buttons.forEach(button => {
+      button.addEventListener("click", () => {
+        const algorithm = button.dataset.algorithm;
+        const data = communityData[algorithm];
+
+        buttons.forEach(b => {
+          const selected = b === button;
+          b.classList.toggle("active", selected);
+          b.setAttribute("aria-pressed", selected);
+        });
+
+        image.src = data.image;
+        image.alt = data.alt;
+        title.textContent = data.title;
+        text.textContent = data.text;
+        discussion.textContent = data.discussion;
+      });
+    });
+
+    buttons.forEach(button =>
+      button.setAttribute(
+        "aria-pressed",
+        button.dataset.algorithm === "louvain"
+      )
+    );
+  </script>
+
+  <h2><span class="idx">03</span>Aristotle's Overlapping Worlds</h2>
+
+  <div class="island-card">
+    <p>
+      Aristotle appears across multiple densely connected
+      regions of the network, linking traditions and
+      intellectual lineages that would otherwise remain
+      separated.
+    </p>
+  </div>
+
+  <div id="cliques"></div>
+
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>Philosopher</th>
+      <th>Weight</th>
+      <th>Tradition</th>
+    </tr>
+    </thead>
+    <tbody id="aristotle-links"></tbody>
+  </table>
+
+  <h2><span class="idx">04</span>Backbone Analysis</h2>
+
+  <div id="critical-banner" class="banner"></div>
+
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>Alpha</th>
+      <th>Edges</th>
+      <th>Components</th>
+      <th>Giant Component</th>
+    </tr>
+    </thead>
+    <tbody id="backbone-table"></tbody>
+  </table>
+
+  <div class="lab">
+
+    <div class="section-label">
+      Alpha Explorer
+    </div>
+
+    <div id="alpha-tabs" class="lab-tabs"></div>
+
+    <div id="alpha-details" class="lab-content"></div>
+
+  </div>
+
+  <h2><span class="idx">05</span>Weighted vs Unweighted Communities</h2>
+
+  <div class="island-card">
+    <p id="weighted-summary"></p>
+  </div>
+
+  <table class="data-table">
+    <thead>
+    <tr>
+      <th>Philosopher</th>
+      <th>Unweighted</th>
+      <th>Weighted</th>
+    </tr>
+    </thead>
+    <tbody id="shifted-table"></tbody>
+  </table>
+
+  <h2>
+    <span class="idx">06</span>
+    Key Findings
+  </h2>
+
+  <div class="island-card">
+    <ul id="findings"></ul>
+  </div>
+
+</article>
+
+<script>
+
+fetch("../assets/data/week4-analysis.json")
+.then(r=>r.json())
+.then(data=>{
+
+  buildStats(data);
+  buildDisagreements(data);
+  buildCommunities(data);
+  buildAristotle(data);
+  buildBackbone(data);
+  buildWeighted(data);
+  buildFindings(data);
+
+});
+
+function buildStats(data){
+
+  const stats=document.getElementById("stats");
+
+  stats.innerHTML=`
+  <div class="stat">
+    <span class="n">${data.meta.total_nodes}</span>
+    <span class="label">Philosophers</span>
+  </div>
+
+  <div class="stat">
+    <span class="n">${data.meta.total_edges}</span>
+    <span class="label">Edges</span>
+  </div>
+
+  <div class="stat">
+    <span class="n">${data.louvain_vs_infomap.nmi.toFixed(3)}</span>
+    <span class="label">Louvain / Infomap NMI</span>
+  </div>
+
+  <div class="stat">
+    <span class="n">${data.backbone_analysis.critical_alpha}</span>
+    <span class="label">Critical Alpha</span>
+  </div>
+  `;
+}
+
+function buildDisagreements(data){
+
+  const disagreements =
+      data.louvain_vs_infomap.disagreements;
+
+  document.getElementById("agreement-summary")
+  .innerText=
+  `NMI = ${data.louvain_vs_infomap.nmi.toFixed(3)}.
+   ${disagreements.length} philosophers are assigned
+   to different communities by the two algorithms.`;
+
+  const tbody =
+      document.getElementById("disagreements-table");
+
+  disagreements
+    .slice(0,10)
+    .forEach(d=>{
+
+      tbody.innerHTML += `
+      <tr>
+        <td>${d.philosopher}</td>
+        <td>${d.louvain_community}</td>
+        <td>${d.infomap_community}</td>
+      </tr>
+      `;
+
+    });
+
+  if(disagreements.length > 10){
+
+    tbody.innerHTML += `
+    <tr>
+      <td colspan="3">
+        ... and ${disagreements.length - 10} more disagreements
+      </td>
+    </tr>
+    `;
+
+  }
+
+  const tabs =
+      document.getElementById("disagreement-tabs");
+
+  const details =
+      document.getElementById("disagreement-details");
+
+  disagreements
+    .slice(0,10)
+    .forEach((d,i)=>{
+
+      const btn = document.createElement("button");
+
+      btn.className="lab-btn";
+      btn.textContent=d.philosopher;
+
+      btn.onclick=()=>{
+
+        tabs.querySelectorAll(".lab-btn")
+        .forEach(b=>b.classList.remove("active"));
+
+        btn.classList.add("active");
+
+        details.innerHTML=`
+        <h3>${d.philosopher}</h3>
+
+        <p>
+          Louvain Community:
+          <strong>${d.louvain_community}</strong>
+        </p>
+
+        <p>
+          Infomap Community:
+          <strong>${d.infomap_community}</strong>
+        </p>
+        `;
+      };
+
+      tabs.appendChild(btn);
+
+      if(i===0) btn.click();
+    });
+}
+function buildCommunities(data){
+
+  renderCommunityGroups(
+    data.louvain_vs_infomap.louvain_assignments,
+    "louvain-communities"
+  );
+
+  renderCommunityGroups(
+    data.louvain_vs_infomap.infomap_assignments,
+    "infomap-communities"
+  );
+}
+
+function renderCommunityGroups(assignments,id){
+
+  const groups = {};
+
+  Object.entries(assignments)
+  .forEach(([name,community])=>{
+
+    if(!groups[community])
+      groups[community] = [];
+
+    groups[community].push(name);
+  });
+
+  const div = document.getElementById(id);
+
+  Object.entries(groups)
+  .slice(0,10)
+  .forEach(([community,members])=>{
+
+    const shown =
+      members.slice(0,10).join(", ");
+
+    const extra =
+      members.length > 10
+      ? ` ... +${members.length - 10} more`
+      : "";
+
+    div.innerHTML += `
+      <h4>Community ${community}</h4>
+      <p>${shown}${extra}</p>
+    `;
+  });
+
+  const communityCount =
+      Object.keys(groups).length;
+
+  if(communityCount > 10){
+
+    div.innerHTML += `
+    <p class="section-label">
+      +${communityCount - 10} more communities
+    </p>
+    `;
+  }
+}
+
+function buildAristotle(data){
+
+  const cliquesDiv =
+      document.getElementById("cliques");
+
+  data.aristotle_overlap.overlapping_cliques
+    .slice(0,10)
+    .forEach(clique=>{
+
+      const visibleMembers =
+        clique.members
+          .slice(0,10)
+          .map(
+            m=>`<span class="tag">${m}</span>`
+          )
+          .join("");
+
+      const extra =
+        clique.members.length > 10
+        ? `
+          <p class="section-label">
+            +${clique.members.length - 10} more members
+          </p>
+          `
+        : "";
+
+      cliquesDiv.innerHTML += `
+      <div class="island-card">
+
+        <p class="section-label">
+          ${clique.clique_id}
+        </p>
+
+        <div class="tags">
+          ${visibleMembers}
+        </div>
+
+        ${extra}
+
+      </div>
+      `;
+    });
+
+  const linkTable =
+      document.getElementById("aristotle-links");
+
+  const links =
+      [...data.aristotle_overlap.links]
+      .sort((a,b)=>b.weight-a.weight);
+
+  links
+    .slice(0,10)
+    .forEach(link=>{
+
+      linkTable.innerHTML += `
+      <tr>
+        <td>${link.target}</td>
+        <td>${link.weight}</td>
+        <td>${link.tradition}</td>
+      </tr>
+      `;
+    });
+
+  if(links.length > 10){
+
+    linkTable.innerHTML += `
+    <tr>
+      <td colspan="3">
+        ... and ${links.length - 10}
+        more Aristotle connections
+      </td>
+    </tr>
+    `;
+  }
+}
+
+function buildBackbone(data){
+
+  document.getElementById("critical-banner")
+  .innerHTML=
+  `Critical transition at α =
+  <strong>${data.backbone_analysis.critical_alpha}</strong>.
+  The philosopher
+  <strong>${data.backbone_analysis.breaking_philosopher}</strong>
+  becomes structurally decisive for network cohesion.`;
+
+  const tbody=
+      document.getElementById("backbone-table");
+
+  const tabs=
+      document.getElementById("alpha-tabs");
+
+  const details=
+      document.getElementById("alpha-details");
+
+  Object.values(data.backbone_analysis.snapshots).forEach((s, i)=>{
+
+    tbody.innerHTML += `
+    <tr>
+      <td>${s.alpha}</td>
+      <td>${s.total_edges}</td>
+      <td>${s.num_components}</td>
+      <td>${s.giant_component_size}</td>
+    </tr>
+    `;
+
+    const btn=document.createElement("button");
+
+    btn.className="lab-btn";
+    btn.textContent=`α=${s.alpha}`;
+
+    btn.onclick=()=>{
+
+       tabs.querySelectorAll(".lab-btn")
+       .forEach(b=>b.classList.remove("active"));
+
+       btn.classList.add("active");
+
+       details.innerHTML=`
+       <h3>α=${s.alpha}</h3>
+
+       <p>Total Edges: ${s.total_edges}</p>
+
+       <p>Components: ${s.num_components}</p>
+
+       <p>Giant Component:
+       ${s.giant_component_size}</p>
+
+       <p>Nodes Visible:
+       ${s.nodes.length}</p>
+       `;
+    };
+
+    tabs.appendChild(btn);
+
+    if(i===0) btn.click();
+
+  });
+
+}
+
+function buildWeighted(data){
+
+  document.getElementById("weighted-summary")
+  .innerText =
+  `Weighted vs Unweighted NMI =
+   ${data.weighted_vs_unweighted
+      .nmi_weighted_vs_unweighted
+      .toFixed(3)}.`;
+
+  const shifted =
+    data.weighted_vs_unweighted
+        .shifted_philosophers;
+
+  const tbody =
+    document.getElementById("shifted-table");
+
+  shifted
+    .slice(200,210)
+    .forEach(p=>{
+
+      tbody.innerHTML += `
+      <tr>
+        <td>${p.philosopher}</td>
+        <td>${p.unweighted_community}</td>
+        <td>${p.weighted_community}</td>
+      </tr>
+      `;
+    });
+
+  if(shifted.length > 10){
+
+    tbody.innerHTML += `
+    <tr>
+      <td colspan="3">
+        ... and ${shifted.length - 10}
+        more shifted philosophers
+      </td>
+    </tr>
+    `;
+  }
+}
+function buildFindings(data){
+
+  const ul=document.getElementById("findings");
+
+  const c=
+    data.aristotle_overlap.overlapping_cliques.length;
+
+  ul.innerHTML=`
+  <li>
+    Louvain and Infomap agree with
+    NMI = ${data.louvain_vs_infomap.nmi.toFixed(3)}.
+  </li>
+
+  <li>
+    Aristotle participates in
+    ${c} overlapping clique structures.
+  </li>
+
+  <li>
+    Under weighted analysis, the make up of the clusters differs wildly.
+  </li>
+
+  <li>
+    Network fragmentation accelerates near
+    α = ${data.backbone_analysis.critical_alpha}.
+  </li>
+
+  <li>
+    ${data.backbone_analysis.breaking_philosopher}
+    is the critical breakpoint philosopher.
+  </li>
+  `;
+}
+
+</script>
+
+</body>
+</html>
